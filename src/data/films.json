@@ -1,0 +1,17 @@
+[
+    {
+      "id": 1,
+      "titre": "Inception",
+      "annee": 2010,
+      "genres": ["Science-fiction", "Thriller"],
+      "note": 8.8
+    },
+    {
+      "id": 2,
+      "titre": "Fight Club",
+      "annee": 1999,
+      "genres": ["Drame"],
+      "note": 8.8
+    }
+  ]
+  
