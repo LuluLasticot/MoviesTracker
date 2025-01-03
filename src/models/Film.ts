@@ -1,16 +1,16 @@
 export class Film {
-    id: number;
-    titre: string;
-    annee: number;
-    genres: string[];
-    note: number;
-  
-    constructor(id: number, titre: string, annee: number, genres: string[], note: number) {
-      this.id = id;
-      this.titre = titre;
-      this.annee = annee;
-      this.genres = genres;
-      this.note = note;
-    }
-  }
-  
+  constructor(
+    public id: number,
+    public titre: string,
+    public annee: number,
+    public genres: string[],
+    public duree: number,
+    public realisateur: string,
+    public acteurs: string[],
+    public synopsis: string,
+    public note: number,
+    public dateDeVisionnage: string,
+    public plateforme: string,
+    public affiche: string
+  ) {}
+}

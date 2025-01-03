@@ -1,17 +1,30 @@
 [
-    {
-      "id": 1,
-      "titre": "Inception",
-      "annee": 2010,
-      "genres": ["Science-fiction", "Thriller"],
-      "note": 8.8
-    },
-    {
-      "id": 2,
-      "titre": "Fight Club",
-      "annee": 1999,
-      "genres": ["Drame"],
-      "note": 8.8
-    }
-  ]
-  
+  {
+    "id": 1,
+    "titre": "Interstellar",
+    "annee": 2014,
+    "genres": ["Science-fiction", "Drame"],
+    "duree": 169,
+    "realisateur": "Christopher Nolan",
+    "acteurs": ["Matthew McConaughey", "Anne Hathaway"],
+    "synopsis": "Un groupe d'explorateurs voyage à travers un trou de ver pour trouver une nouvelle maison à l'humanité.",
+    "note": 8.5,
+    "dateDeVisionnage": "2024-10-01",
+    "plateforme": "Netflix",
+    "affiche": "https://m.media-amazon.com/images/M/MV5BZjdkOTU3MDktN2IxOS5BMl5BanBnXkFtZTgwMjc5ODYwMzE@._V1_.jpg"
+  },
+  {
+    "id": 2,
+    "titre": "Fight Club",
+    "annee": 1999,
+    "genres": ["Drame", "Thriller"],
+    "duree": 139,
+    "realisateur": "David Fincher",
+    "acteurs": ["Brad Pitt", "Edward Norton"],
+    "synopsis": "Un employé de bureau et un fabricant de savon rebelle forment un club de combat clandestin.",
+    "note": 7.5,
+    "dateDeVisionnage": "2024-10-05",
+    "plateforme": "Prime Video",
+    "affiche": "https://m.media-amazon.com/images/M/MV5BNGVjNWI4ZGUtNzE0MS00YTJmLWE0ZDctN2ZiYTk2YmI3NTYyXkEyXkFqcGdeQXVyMTkxNjUyNQ@@._V1_.jpg"
+  }
+]

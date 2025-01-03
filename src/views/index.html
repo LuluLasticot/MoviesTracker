@@ -1,21 +1,146 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FilmTracker</title>
-  <link rel="stylesheet" href="/assets/styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Film Tracker</title>
+    <link rel="stylesheet" href="/assets/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-  <header>
-    <h1>Bienvenue sur FilmTracker</h1>
-  </header>
-  <main>
-    <section id="films">
-      <h2>Liste des Films</h2>
-      <ul id="film-list"></ul>
-    </section>
-  </main>
-  <script src="/dist/index.js" type="module"></script>
+    <nav class="navbar">
+        <div class="logo">FILM TRACKER</div>
+        <div class="nav-container">
+            <div class="nav-links">
+                <a href="#" class="active">Home</a>
+                <a href="#">Dashboard</a>
+                <a href="#">Watchlist</a>
+                <a href="#">Profile</a>
+            </div>
+        </div>
+        <div class="auth-buttons">
+            <button class="search-btn">
+                <i class="fas fa-search"></i>
+            </button>
+            <button class="login-btn">Login</button>
+            <button class="signup-btn">Sign Up</button>
+        </div>
+    </nav>
+
+    <main>
+        <section class="hero">
+            <h1>JOIN THE ULTIMATE<br>MOVIE TRACKING EXPERIENCE.</h1>
+            <button class="dashboard-btn">Accéder au dashboard →</button>
+            <p class="movie-count">Vous avez ajouté <span>00</span> films.</p>
+        </section>
+
+        <section class="movie-form">
+            <div class="form-container">
+                <div class="form-group">
+                    <label>Titre du film</label>
+                    <input type="text" placeholder="Inception, le seigneur des anneaux, interstellar...">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Genre(s)</label>
+                        <select>
+                            <option>Action, Comédie</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Année</label>
+                        <select>
+                            <option>2006</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Durée (min)</label>
+                        <input type="number" value="143">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Réalisateur</label>
+                        <input type="text" placeholder="Christopher Nolan, Jordan Peele...">
+                    </div>
+                    <div class="form-group">
+                        <label>Distribution</label>
+                        <input type="text" placeholder="Brad Pitt, Natalie Portman...">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Synopsis</label>
+                    <textarea placeholder="Un voleur spécialisé dans l'espionnage industriel via les rêves est chargé d'implanter une idée dans l'esprit d'un PDG."></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Note (/10)</label>
+                        <select>
+                            <option>8.5</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Date du visionnage</label>
+                        <input type="date" value="2024-10-25">
+                    </div>
+                    <div class="form-group">
+                        <label>Plateforme de visionnage</label>
+                        <select>
+                            <option>Prime Video</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button class="submit-btn">Ajouter un film</button>
+            </div>
+        </section>
+
+        <section class="movies-list">
+            <div class="section-header">
+                <h2>Films vus</h2>
+                <select class="sort-select">
+                    <option>Note</option>
+                </select>
+            </div>
+            <div class="movies-grid">
+                <div class="movie-card">
+                    <img src="https://m.media-amazon.com/images/M/MV5BZjdkOTU3MDktN2IxOS5BMl5BanBnXkFtZTgwMjc5ODYwMzE@._V1_.jpg" alt="Interstellar">
+                    <div class="movie-info">
+                        <h3>Interstellar</h3>
+                        <p>2014</p>
+                        <div class="rating">8/10</div>
+                    </div>
+                </div>
+                <div class="movie-card">
+                    <img src="https://m.media-amazon.com/images/M/MV5BNGVjNWI4ZGUtNzE0MS00YTJmLWE0ZDctN2ZiYTk2YmI3NTYyXkEyXkFqcGdeQXVyMTkxNjUyNQ@@._V1_.jpg" alt="Fight Club">
+                    <div class="movie-info">
+                        <h3>Fight Club</h3>
+                        <p>1999</p>
+                        <div class="rating">8/10</div>
+                    </div>
+                </div>
+                <div class="movie-card">
+                    <img src="https://m.media-amazon.com/images/M/MV5BN2EyZjM3NzUtNWUzMi00MTgxLWI0NTctMzY4M2VlOTdjZWRiXkEyXkFqcGdeQXVyNDUzOTQ5MjY@._V1_.jpg" alt="Le Seigneur Des Anneaux">
+                    <div class="movie-info">
+                        <h3>Le Seigneur Des Anneaux</h3>
+                        <p>2001</p>
+                        <div class="rating">8/10</div>
+                    </div>
+                </div>
+                <div class="movie-card">
+                    <img src="https://m.media-amazon.com/images/M/MV5BOTA5NDZlZGUtMjAxOS00YTRkLTkwYmMtYWQ0NWEwZDZiNjEzXkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_.jpg" alt="Whiplash">
+                    <div class="movie-info">
+                        <h3>Whiplash</h3>
+                        <p>2014</p>
+                        <div class="rating">7.5/10</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
 </body>
 </html>
