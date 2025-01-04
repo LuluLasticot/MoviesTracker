@@ -233,7 +233,7 @@ textarea {
 }
 
 .movie-card:hover {
-  transform: translateY(-5px);
+  transform: translateY(-10px);
 }
 
 .movie-card img {
