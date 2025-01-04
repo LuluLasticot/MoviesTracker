@@ -300,3 +300,14 @@ function resetForm(): void {
     afficheHiddenInput.value = "";
   }
 }
+
+// app.ts (à la suite de ton code)
+export function supprimerFilm(id: number) {
+    // On filtre le tableau global "films"
+    films = films.filter((film) => film.id !== id);
+    
+    // On réaffiche
+    afficherFilms(films);
+    updateMovieCount();
+  }
+  
