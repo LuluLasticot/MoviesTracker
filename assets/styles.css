@@ -264,3 +264,73 @@ textarea {
   border-radius: 0.3rem;
   font-weight: bold;
 }
+
+/* ===================
+   CHOICES.JS OVERRIDES
+   =================== */
+
+/* Conteneur principal (zone cliquable) */
+.choices[data-type*="select-one"] .choices__inner,
+.choices[data-type*="select-multiple"] .choices__inner {
+  background-color: var(--input-bg);
+  border: 1px solid #2A2A2A;
+  border-radius: 0.5rem;
+  color: var(--text-color);
+  min-height: 2.5rem; /* Ajuste si tu veux plus d'espace vertical */
+}
+
+/* Label et placeholder dans le champ */
+.choices[data-type*="select-one"] .choices__placeholder,
+.choices[data-type*="select-multiple"] .choices__placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Les "bulles" (tags) pour les éléments sélectionnés en mode multiple */
+.choices[data-type*="select-multiple"] .choices__item {
+  background-color: var(--input-bg);
+  color: var(--text-color);
+  border: none;
+  border-radius: 0.3rem;
+  margin: 0.2rem 0.3rem 0.2rem 0; /* espace entre les tags */
+  padding: 0.3rem 0.6rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+/* Supprimer une valeur (le petit bouton "x") */
+.choices[data-type*="select-multiple"] .choices__item[data-item][data-deletable] {
+  padding-right: 1.8rem; /* laisse de la place pour le bouton de suppression */
+}
+
+/* Style du bouton "x" quand on survole un tag */
+.choices[data-type*="select-multiple"] .choices__item[data-item][data-deletable]:hover {
+  opacity: 0.9;
+}
+
+/* Style de la liste déroulante lorsque l'utilisateur clique pour voir les options */
+.choices__list--dropdown .choices__item--selectable {
+  background: var(--card-bg);
+  border-bottom: 1px solid #2A2A2A;
+  color: var(--text-color);
+  transition: background-color 0.2s;
+  padding: 0.6rem;
+}
+
+/* Effet hover sur chaque option */
+.choices__list--dropdown .choices__item--selectable:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #0A0A0A;
+}
+
+/* Masque la petite flèche "chevron" si on le souhaite (optionnel) */
+.choices__inner::after {
+  display: none;
+}
+
+:root {
+  --primary-color: #FF1E1E;
+  --bg-color: #0A0A0A;
+  --text-color: #FFFFFF;
+  --card-bg: #1A1A1A;
+  --input-bg: #141414;
+}
