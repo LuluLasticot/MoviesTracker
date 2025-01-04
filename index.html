@@ -186,8 +186,9 @@
                     <option value="Autre">Autre</option>
                 </select>
                 </div>
+                <!-- Champ caché pour stocker l'URL d'affiche récupérée via TMDB -->
+                <input type="hidden" id="affiche" />
             </div>
-        
             <!-- Bouton "Ajouter un film" -->
             <button class="submit-btn" id="ajouter-film-btn">Ajouter un film</button>
             </div>
@@ -199,7 +200,10 @@
             <div class="section-header">
                 <h2>Films vus</h2>
                 <select class="sort-select">
-                    <option>Note</option>
+                    <option value="">-- Tri par --</option>
+                    <option value="Note">Note</option>
+                    <option value="Titre">Titre</option>
+                    <option value="Année">Année</option>
                 </select>
             </div>
             <div class="movies-grid">

@@ -42,10 +42,32 @@ document.addEventListener("DOMContentLoaded", async () => {
         ajouterNouveauFilm();
       });
     }
+
+    const sortSelect = document.querySelector(".sort-select") as HTMLSelectElement;
+    if (sortSelect) {
+        sortSelect.addEventListener("change", () => {
+            trierFilms(sortSelect.value);
+        });
+    }
   } catch (error) {
     console.error("Erreur lors du chargement initial :", error);
   }
 });
+
+function trierFilms(critere: string) {
+    if (critere === "Note") {
+      // tri décroissant par note
+      films.sort((a, b) => b.note - a.note);
+    } else if (critere === "Titre") {
+      // tri alphabétique
+      films.sort((a, b) => a.titre.localeCompare(b.titre));
+    } else if (critere === "Année") {
+      // tri décroissant par année
+      films.sort((a, b) => b.annee - a.annee);
+    }
+  
+    afficherFilms(films);
+  }
 
 // ========== FONCTION : Ajout d'un nouveau film ==========
 function ajouterNouveauFilm(): void {
