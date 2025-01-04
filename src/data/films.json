@@ -40,5 +40,19 @@
     "dateDeVisionnage": "2024-10-05",
     "plateforme": "Prime Video",
     "affiche": "https://m.media-amazon.com/images/M/MV5BNGVjNWI4ZGUtNzE0MS00YTJmLWE0ZDctN2ZiYTk2YmI3NTYyXkEyXkFqcGdeQXVyMTkxNjUyNQ@@._V1_.jpg"
+  },
+  {
+    "id": 4,
+    "titre": "The Dark Knight",
+    "annee": 2002,
+    "genres": ["Drame", "Thriller"],
+    "duree": 139,
+    "realisateur": "David Fincher",
+    "acteurs": ["Brad Pitt", "Edward Norton"],
+    "synopsis": "Un employé de bureau et un fabricant de savon rebelle forment un club de combat clandestin.",
+    "note": 7.5,
+    "dateDeVisionnage": "2024-10-05",
+    "plateforme": "Prime Video",
+    "affiche": "https://m.media-amazon.com/images/M/MV5BNGVjNWI4ZGUtNzE0MS00YTJmLWE0ZDctN2ZiYTk2YmI3NTYyXkEyXkFqcGdeQXVyMTkxNjUyNQ@@._V1_.jpg"
   }
 ]

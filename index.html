@@ -34,70 +34,166 @@
             <p class="movie-count">Vous avez ajouté <span>00</span> films.</p>
         </section>
 
+        <!-- ===================== MOVIE FORM SECTION ===================== -->
         <section class="movie-form">
             <div class="form-container">
+            
+            <!-- Titre du film -->
+            <div class="form-group">
+                <label for="film-title">Titre du film</label>
+                <input
+                type="text"
+                id="film-title"
+                placeholder="Inception, Le Seigneur des Anneaux, Interstellar..."
+                />
+            </div>
+        
+            <!-- Ligne avec Genre(s), Année, Durée -->
+            <div class="form-row">
+                <!-- Genre(s) multi-select -->
                 <div class="form-group">
-                    <label>Titre du film</label>
-                    <input type="text" placeholder="Inception, le seigneur des anneaux, interstellar...">
+                <label for="genres">Genre(s)</label>
+                <select id="genres" name="genres" multiple size="1">
+                    <!-- Exemples de genres - tu peux en rajouter -->
+                    <option value="Action">Action</option>
+                    <option value="Aventure">Aventure</option>
+                    <option value="Comédie">Comédie</option>
+                    <option value="Drame">Drame</option>
+                    <option value="Horreur">Horreur</option>
+                    <option value="Policier">Policier</option>
+                    <option value="Romance">Romance</option>
+                    <option value="Science-fiction">Science-fiction</option>
+                    <option value="Thriller">Thriller</option>
+                    <option value="Animation">Animation</option>
+                </select>
                 </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Genre(s)</label>
-                        <select>
-                            <option>Action, Comédie</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Année</label>
-                        <select>
-                            <option>2006</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Durée (min)</label>
-                        <input type="number" value="143">
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Réalisateur</label>
-                        <input type="text" placeholder="Christopher Nolan, Jordan Peele...">
-                    </div>
-                    <div class="form-group">
-                        <label>Distribution</label>
-                        <input type="text" placeholder="Brad Pitt, Natalie Portman...">
-                    </div>
-                </div>
-
+        
+                <!-- Année -->
                 <div class="form-group">
-                    <label>Synopsis</label>
-                    <textarea placeholder="Un voleur spécialisé dans l'espionnage industriel via les rêves est chargé d'implanter une idée dans l'esprit d'un PDG."></textarea>
+                <label for="annee">Année</label>
+                <select id="annee" name="annee">
+                    <!-- Exemple d'années, complète la liste si besoin -->
+                    <option value="2025">2025</option>
+                    <option value="2024">2024</option>
+                    <option value="2023">2023</option>
+                    <option value="2022">2022</option>
+                    <option value="2021">2021</option>
+                    <!-- ... etc. ... -->
+                    <option value="1900">1900</option>
+                    <option value="1895">1895</option>
+                </select>
                 </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Note (/10)</label>
-                        <select>
-                            <option>8.5</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Date du visionnage</label>
-                        <input type="date" value="2024-10-25">
-                    </div>
-                    <div class="form-group">
-                        <label>Plateforme de visionnage</label>
-                        <select>
-                            <option>Prime Video</option>
-                        </select>
-                    </div>
+        
+                <!-- Durée (min) -->
+                <div class="form-group">
+                <label for="duree">Durée (min)</label>
+                <input
+                    type="number"
+                    id="duree"
+                    name="duree"
+                    value="120"
+                    min="1"
+                    max="600"
+                />
                 </div>
-
-                <button class="submit-btn">Ajouter un film</button>
+            </div>
+        
+            <!-- Ligne avec Réalisation(s), Distribution -->
+            <div class="form-row">
+                <!-- Réalisation(s) -->
+                <div class="form-group">
+                <label for="realisations">Réalisation(s)</label>
+                <input
+                    type="text"
+                    id="realisations"
+                    placeholder="Christopher Nolan, Eric Toledano, Olivier Nakache..."
+                />
+                </div>
+                <!-- Distribution -->
+                <div class="form-group">
+                <label for="distribution">Distribution</label>
+                <input
+                    type="text"
+                    id="distribution"
+                    placeholder="Brad Pitt, Natalie Portman..."
+                />
+                </div>
+            </div>
+        
+            <!-- Synopsis avec limite de caractères -->
+            <div class="form-group">
+                <label for="synopsis">Synopsis</label>
+                <textarea
+                id="synopsis"
+                placeholder="Un voleur spécialisé dans l'espionnage industriel via les rêves..."
+                maxlength="500"
+                ></textarea>
+                <!-- Tu peux afficher un compteur de caractères si tu veux, en JS -->
+            </div>
+        
+            <!-- Ligne Note, Date, Plateforme -->
+            <div class="form-row">
+                <!-- Note (/10) -->
+                <div class="form-group">
+                <label for="note">Note (/10)</label>
+                <select id="note" name="note">
+                    <!-- Incréments de 0.5 de 0 à 10 -->
+                    <option value="0">0</option>
+                    <option value="0.5">0.5</option>
+                    <option value="1">1</option>
+                    <option value="1.5">1.5</option>
+                    <option value="2">2</option>
+                    <option value="2.5">2.5</option>
+                    <option value="3">3</option>
+                    <option value="3.5">3.5</option>
+                    <option value="4">4</option>
+                    <option value="4.5">4.5</option>
+                    <option value="5">5</option>
+                    <option value="5.5">5.5</option>
+                    <option value="6">6</option>
+                    <option value="6.5">6.5</option>
+                    <option value="7">7</option>
+                    <option value="7.5">7.5</option>
+                    <option value="8">8</option>
+                    <option value="8.5">8.5</option>
+                    <option value="9">9</option>
+                    <option value="9.5">9.5</option>
+                    <option value="10">10</option>
+                </select>
+                </div>
+        
+                <!-- Date de visionnage -->
+                <div class="form-group">
+                <label for="dateVisionnage">Date du visionnage</label>
+                <input
+                    type="date"
+                    id="dateVisionnage"
+                    name="dateVisionnage"
+                    value="2024-10-25"
+                />
+                </div>
+        
+                <!-- Plateforme de visionnage -->
+                <div class="form-group">
+                <label for="plateforme">Plateforme de visionnage</label>
+                <select id="plateforme" name="plateforme">
+                    <option value="Netflix">Netflix</option>
+                    <option value="Prime Video">Prime Video</option>
+                    <option value="Disney+">Disney+</option>
+                    <option value="OCS">OCS</option>
+                    <option value="Apple TV+">Apple TV+</option>
+                    <option value="Canal+">Canal+</option>
+                    <option value="Autre">Autre</option>
+                </select>
+                </div>
+            </div>
+        
+            <!-- Bouton "Ajouter un film" -->
+            <button class="submit-btn" id="ajouter-film-btn">Ajouter un film</button>
             </div>
         </section>
+  <!-- ===================== END MOVIE FORM SECTION ===================== -->
+  
 
         <section class="movies-list">
             <div class="section-header">
