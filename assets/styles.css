@@ -242,6 +242,38 @@ textarea {
   object-fit: cover;
 }
 
+
+.card-buttons {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  gap: 0.4rem;
+}
+
+.movie-card button.delete-btn,
+.movie-card button.edit-btn {
+  background: rgba(255, 255, 255, 0.1); /* fond léger */
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 0.3rem;
+  transition: background-color 0.2s;
+  font-size: 1rem;
+}
+
+.movie-card button.delete-btn:hover,
+.movie-card button.edit-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Icones Font Awesome plus visibles */
+.movie-card button.delete-btn i,
+.movie-card button.edit-btn i {
+  pointer-events: none; /* pour cliquer "à travers" l'icône */
+}
+
 .movie-info {
   position: absolute;
   bottom: 0;

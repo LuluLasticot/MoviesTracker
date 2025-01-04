@@ -128,7 +128,7 @@ function showSuggestions(movies: any[], inputEl: HTMLInputElement) {
       clearSuggestions();
     });
 
-    suggestionBox.appendChild(li);
+    suggestionBox!.appendChild(li);
   });
 }
 
@@ -214,10 +214,40 @@ function ajouterNouveauFilm(): void {
 
     // Soit on est en mode "édition", soit en mode "création"
     if (filmEnCoursDeModification != null) {
-      // On modifiera le film existant (ÉTAPE C plus tard)
-      console.log("Mode EDIT à implémenter...");
+      // MODE ÉDITION
+      const film = films.find(f => f.id === filmEnCoursDeModification);
+      if (!film) {
+        console.error("Film introuvable pour la modification");
+        return;
+      }
+    
+      // On met à jour les champs
+      film.titre = titleInput.value || "Titre inconnu";
+      film.annee = parseInt(anneeSelect.value, 10) || 1900;
+      film.genres = selectedGenres;
+      film.duree = parseInt(dureeInput.value, 10) || 120;
+      film.realisateur = realisations.join(", ");
+      film.acteurs = distributions;
+      film.synopsis = synopsisTextarea.value || "";
+      film.note = parseFloat(noteSelect.value) || 0;
+      film.dateDeVisionnage = dateVisionnageInput.value || "";
+      film.plateforme = plateformeSelect.value || "Autre";
+      film.affiche = afficheHiddenInput.value || "https://via.placeholder.com/400x600?text=No+Poster";
+    
+      // On sort du mode édition
+      filmEnCoursDeModification = null;
+    
+      // On remet le bouton à "Ajouter un film"
+      const addButton = document.getElementById("ajouter-film-btn") as HTMLButtonElement;
+      addButton.textContent = "Ajouter un film";
+    
+      // On réaffiche
+      afficherFilms(films);
+      updateMovieCount();
+      resetForm();
       return;
     }
+    
 
     // Sinon, on crée un nouveau Film
     const newFilm = new Film(
@@ -310,4 +340,56 @@ export function supprimerFilm(id: number) {
     afficherFilms(films);
     updateMovieCount();
   }
+
+// app.ts
+export function modifierFilm(id: number) {
+  const film = films.find(f => f.id === id);
+  if (!film) return;
+
+  // On passe en mode édition
+  filmEnCoursDeModification = id;
+
+  // Remplir le formulaire
+  const titleInput = document.getElementById("film-title") as HTMLInputElement;
+  titleInput.value = film.titre;
+
+  if (genreChoices) {
+    genreChoices.clearStore();
+    film.genres.forEach((g) => {
+      genreChoices!.setChoiceByValue(g);
+    });
+  }
+
+  const anneeSelect = document.getElementById("annee") as HTMLSelectElement;
+  anneeSelect.value = film.annee.toString();
+
+  const dureeInput = document.getElementById("duree") as HTMLInputElement;
+  dureeInput.value = String(film.duree);
+
+  const realisationsInput = document.getElementById("realisations") as HTMLInputElement;
+  realisationsInput.value = film.realisateur;
+
+  const distributionInput = document.getElementById("distribution") as HTMLInputElement;
+  distributionInput.value = film.acteurs.join(", ");
+
+  const synopsisTextarea = document.getElementById("synopsis") as HTMLTextAreaElement;
+  synopsisTextarea.value = film.synopsis;
+
+  const noteSelect = document.getElementById("note") as HTMLSelectElement;
+  noteSelect.value = String(film.note);
+
+  const dateVisionnageInput = document.getElementById("dateVisionnage") as HTMLInputElement;
+  dateVisionnageInput.value = film.dateDeVisionnage;
+
+  const plateformeSelect = document.getElementById("plateforme") as HTMLSelectElement;
+  plateformeSelect.value = film.plateforme;
+
+  const afficheHiddenInput = document.getElementById("affiche") as HTMLInputElement;
+  afficheHiddenInput.value = film.affiche;
+
+  // On modifie le texte du bouton pour informer l’utilisateur qu'on est en mode édition
+  const addButton = document.getElementById("ajouter-film-btn") as HTMLButtonElement;
+  addButton.textContent = "Enregistrer modifications";
+}
+
   
