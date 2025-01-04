@@ -1,30 +1,29 @@
-// app.ts
+// src/app.ts
+
 import { chargerFilms, afficherFilms } from "./controllers/FilmController";
 import { Film } from "./models/Film";
-import { fetchData } from "./utils/fetchData";
-
-// ----- Import Choices.js si tu l'utilises pour le multi-select ----
+import { searchMoviesOnTMDB } from "./api/tmdb"; // AJOUT AUTO-COMPLETE
 import Choices from "choices.js";
 import "choices.js/public/assets/styles/choices.min.css";
 
 // On va stocker nos films dans un tableau global (en mémoire)
 let films: Film[] = [];
-
-// Pour stocker l'instance de Choices concernant les genres
 let genreChoices: Choices | null = null;
+let filmEnCoursDeModification: number | null = null; // servira plus tard pour "modifier un film"
+
+// Pour l'autocomplete
+let suggestionBox: HTMLUListElement | null = null;
 
 document.addEventListener("DOMContentLoaded", async () => {
   try {
-    // 1. Charger les films existants depuis le JSON
+    // 1. Charger et afficher les films
     films = await chargerFilms();
-    
-    // 2. Afficher ces films dans la grille
     afficherFilms(films);
 
-    // 3. Mettre à jour le compteur
+    // 2. Mettre à jour le compteur
     updateMovieCount();
 
-    // 4. Initialiser Choices.js sur le select "genres"
+    // 3. Initialiser Choices.js pour le sélecteur "genres"
     const genreSelect = document.getElementById("genres") as HTMLSelectElement;
     if (genreSelect) {
       genreChoices = new Choices(genreSelect, {
@@ -34,11 +33,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
     }
 
-    // 5. Récupérer le bouton "Ajouter un film" et écouter le clic
+    // 4. Gérer le bouton "Ajouter un film"
     const addButton = document.getElementById("ajouter-film-btn");
     if (addButton) {
       addButton.addEventListener("click", (event) => {
-        event.preventDefault(); // Empêche le refresh de la page si c'est un <button> dans un <form>
+        event.preventDefault();
         ajouterNouveauFilm();
       });
     }
@@ -46,13 +45,53 @@ document.addEventListener("DOMContentLoaded", async () => {
     const sortSelect = document.querySelector(".sort-select") as HTMLSelectElement;
     if (sortSelect) {
         sortSelect.addEventListener("change", () => {
-            trierFilms(sortSelect.value);
+        trierFilms(sortSelect.value);
         });
     }
+
+    // 5. Initialiser l'autocomplete sur le champ "film-title"
+    initAutocomplete(); // AJOUT AUTO-COMPLETE
+
   } catch (error) {
     console.error("Erreur lors du chargement initial :", error);
   }
 });
+
+/* =========================================================
+   AUTO-COMPLETION TMDB
+   ========================================================= */
+function initAutocomplete(): void {
+  const titleInput = document.getElementById("film-title") as HTMLInputElement;
+  if (!titleInput) return;
+
+  // Créer un <ul> pour la liste de suggestions
+  suggestionBox = document.createElement("ul");
+  suggestionBox.classList.add("autocomplete-list");
+
+  // Pour que la liste soit positionnée juste sous le champ, 
+  // on place 'position: relative' sur le parent si besoin.
+  // On va insérer la suggestionBox dans le parent du champ
+  const parent = titleInput.parentElement;
+  if (parent) {
+    parent.style.position = "relative"; // s'assure que le <ul> sera bien positionné
+    parent.appendChild(suggestionBox);
+  }
+
+  // Écoute de l'événement "input"
+  titleInput.addEventListener("input", async () => {
+    const query = titleInput.value.trim();
+    if (query.length < 2) {
+      clearSuggestions();
+      return;
+    }
+    try {
+      const results = await searchMoviesOnTMDB(query);
+      showSuggestions(results, titleInput);
+    } catch (error) {
+      console.error("Erreur auto-complétion TMDB :", error);
+    }
+  });
+}
 
 function trierFilms(critere: string) {
     if (critere === "Note") {
@@ -69,10 +108,73 @@ function trierFilms(critere: string) {
     afficherFilms(films);
   }
 
-// ========== FONCTION : Ajout d'un nouveau film ==========
+// Affiche la liste de suggestions (top 5)
+function showSuggestions(movies: any[], inputEl: HTMLInputElement) {
+  clearSuggestions();
+  if (!suggestionBox) return;
+
+  const top5 = movies.slice(0, 5);
+  top5.forEach((movie: any) => {
+    const li = document.createElement("li");
+    const year = movie.release_date ? movie.release_date.substring(0, 4) : "????";
+    li.textContent = `${movie.title} (${year})`;
+
+    li.addEventListener("click", () => {
+      // On remplit le champ titre
+      inputEl.value = movie.title;
+      // On préremplit l'affiche (hidden input)
+      fillFormWithTMDB(movie);
+      // On efface la liste de suggestions
+      clearSuggestions();
+    });
+
+    suggestionBox.appendChild(li);
+  });
+}
+
+function clearSuggestions() {
+  if (suggestionBox) {
+    suggestionBox.innerHTML = "";
+  }
+}
+
+/**
+ * Remplit certains champs (affiche, année...) avec les infos du film TMDB
+ */
+function fillFormWithTMDB(movie: any) {
+  // 1. Récupérer l'année depuis "release_date"
+  const anneeSelect = document.getElementById("annee") as HTMLSelectElement;
+  if (movie.release_date) {
+    const releaseYear = movie.release_date.substring(0, 4);
+    // On essaie de sélectionner l'année si elle existe dans la liste
+    anneeSelect.value = releaseYear;
+  }
+
+  // 2. Récupérer l'affiche
+  const posterPath = movie.poster_path
+    ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+    : "https://via.placeholder.com/400x600?text=No+Poster";
+
+  // 3. Stocker ça dans le champ hidden "affiche"
+  const afficheHiddenInput = document.getElementById("affiche") as HTMLInputElement;
+  if (afficheHiddenInput) {
+    afficheHiddenInput.value = posterPath;
+  }
+
+  // 4. (Optionnel) on peut aussi remplir le synopsis, etc.
+  // => movie.overview
+  const synopsisTextarea = document.getElementById("synopsis") as HTMLTextAreaElement;
+  if (synopsisTextarea && movie.overview) {
+    synopsisTextarea.value = movie.overview;
+  }
+}
+
+/* =========================================================
+   FONCTION : Ajouter un nouveau film dans la liste
+   ========================================================= */
 function ajouterNouveauFilm(): void {
   try {
-    // 1. Récupérer chaque champ du formulaire
+    // Récupérer chaque champ
     const titleInput = document.getElementById("film-title") as HTMLInputElement;
     const anneeSelect = document.getElementById("annee") as HTMLSelectElement;
     const dureeInput = document.getElementById("duree") as HTMLInputElement;
@@ -82,22 +184,20 @@ function ajouterNouveauFilm(): void {
     const noteSelect = document.getElementById("note") as HTMLSelectElement;
     const dateVisionnageInput = document.getElementById("dateVisionnage") as HTMLInputElement;
     const plateformeSelect = document.getElementById("plateforme") as HTMLSelectElement;
+    const afficheHiddenInput = document.getElementById("affiche") as HTMLInputElement;
 
-    // 2. Genres via Choices.js
-    //    Si on n'a pas genreChoices, on fallback sur un select multiple classique
+    // Genres via Choices.js
     let selectedGenres: string[] = [];
     if (genreChoices) {
-      // getValue(true) renvoie un tableau de valeurs sélectionnées
       selectedGenres = genreChoices.getValue(true) as string[];
     } else {
-      // fallback : lire via le select multiple
       const genreSelect = document.getElementById("genres") as HTMLSelectElement;
       if (genreSelect) {
         selectedGenres = Array.from(genreSelect.selectedOptions).map(opt => opt.value);
       }
     }
 
-    // 3. Parser les champs "Réalisation(s)" et "Distribution" (séparés par virgule)
+    // Parser réalisations et distribution
     const realisations = realisationsInput.value
       .split(",")
       .map(r => r.trim())
@@ -108,44 +208,45 @@ function ajouterNouveauFilm(): void {
       .map(d => d.trim())
       .filter(d => d.length > 0);
 
-    // 4. Construire un nouvel ID (id = max ID existant + 1)
+    // Construire ou incrémenter un nouvel ID
     const maxId = films.length > 0 ? Math.max(...films.map(f => f.id)) : 0;
     const newId = maxId + 1;
 
-    // 5. Construire un objet Film
+    // Soit on est en mode "édition", soit en mode "création"
+    if (filmEnCoursDeModification != null) {
+      // On modifiera le film existant (ÉTAPE C plus tard)
+      console.log("Mode EDIT à implémenter...");
+      return;
+    }
+
+    // Sinon, on crée un nouveau Film
     const newFilm = new Film(
       newId,
       titleInput.value || "Titre inconnu",
       parseInt(anneeSelect.value, 10) || 1900,
       selectedGenres,
       parseInt(dureeInput.value, 10) || 120,
-      realisations.join(", "), // ou on peut garder un tableau pour realisateur, à toi de voir
+      realisations.join(", "),
       distributions,
       synopsisTextarea.value || "",
       parseFloat(noteSelect.value) || 0,
       dateVisionnageInput.value || "",
       plateformeSelect.value || "Autre",
-      "https://via.placeholder.com/400x600?text=No+Poster" // URL par défaut pour l’affiche
+      afficheHiddenInput?.value || "https://via.placeholder.com/400x600?text=No+Poster"
     );
 
-    // 6. Ajouter ce nouveau film au tableau
     films.push(newFilm);
-
-    // 7. Réafficher les films
     afficherFilms(films);
-
-    // 8. Mettre à jour le compteur
     updateMovieCount();
-
-    // 9. (Optionnel) Réinitialiser le formulaire
     resetForm();
-
   } catch (error) {
     console.error("Erreur lors de l'ajout d'un nouveau film :", error);
   }
 }
 
-// ========== FONCTION : Mettre à jour le compteur de films ==========
+/* =========================================================
+   FONCTION : Mise à jour du compteur
+   ========================================================= */
 function updateMovieCount(): void {
   const movieCountElement = document.querySelector(".movie-count span");
   if (movieCountElement) {
@@ -153,13 +254,14 @@ function updateMovieCount(): void {
   }
 }
 
-// ========== FONCTION : Réinitialiser le formulaire (optionnel) ==========
+/* =========================================================
+   FONCTION : Réinitialiser le formulaire
+   ========================================================= */
 function resetForm(): void {
   const titleInput = document.getElementById("film-title") as HTMLInputElement;
   titleInput.value = "";
 
   if (genreChoices) {
-    // Réinitialiser Choices (librairie)
     genreChoices.clearStore();
     genreChoices.setChoiceByValue([]);
   } else {
@@ -170,7 +272,7 @@ function resetForm(): void {
   }
 
   const anneeSelect = document.getElementById("annee") as HTMLSelectElement;
-  anneeSelect.value = "2025"; // ou l'option par défaut
+  anneeSelect.value = "2025";
 
   const dureeInput = document.getElementById("duree") as HTMLInputElement;
   dureeInput.value = "120";
@@ -191,5 +293,10 @@ function resetForm(): void {
   dateVisionnageInput.value = "";
 
   const plateformeSelect = document.getElementById("plateforme") as HTMLSelectElement;
-  plateformeSelect.value = "Netflix"; // ou autre valeur par défaut
+  plateformeSelect.value = "Netflix";
+
+  const afficheHiddenInput = document.getElementById("affiche") as HTMLInputElement;
+  if (afficheHiddenInput) {
+    afficheHiddenInput.value = "";
+  }
 }
