@@ -5,6 +5,7 @@ import { Film } from "./models/Film";
 import { searchMoviesOnTMDB } from "./api/tmdb"; // AJOUT AUTO-COMPLETE
 import Choices from "choices.js";
 import "choices.js/public/assets/styles/choices.min.css";
+import { chargerUtilisateurs, connecterUtilisateur, inscrireUtilisateur } from "./controllers/UtilisateurController";
 
 // On va stocker nos films dans un tableau global (en mémoire)
 let films: Film[] = [];
@@ -15,13 +16,23 @@ let filmEnCoursDeModification: number | null = null; // servira plus tard pour "
 let suggestionBox: HTMLUListElement | null = null;
 
 document.addEventListener("DOMContentLoaded", async () => {
+  
   try {
+    
+    await chargerUtilisateurs();
+    
     // 1. Charger et afficher les films
     films = await chargerFilms();
     afficherFilms(films);
 
     // 2. Mettre à jour le compteur
     updateMovieCount();
+
+    updateHeaderUI();
+
+    initAuthModals();
+
+    initFilmsStuff();
 
     // 3. Initialiser Choices.js pour le sélecteur "genres"
     const genreSelect = document.getElementById("genres") as HTMLSelectElement;
@@ -56,6 +67,139 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.error("Erreur lors du chargement initial :", error);
   }
 });
+
+function initAuthModals() {
+  // Boutons du header
+  const loginBtn = document.querySelector(".login-btn") as HTMLButtonElement;
+  const signupBtn = document.querySelector(".signup-btn") as HTMLButtonElement;
+
+  // Modals
+  const loginModal = document.getElementById("login-modal") as HTMLDivElement;
+  const signupModal = document.getElementById("signup-modal") as HTMLDivElement;
+
+  if (loginBtn) {
+    loginBtn.addEventListener("click", () => {
+      loginModal.classList.remove("hidden");
+    });
+  }
+  if (signupBtn) {
+    signupBtn.addEventListener("click", () => {
+      signupModal.classList.remove("hidden");
+    });
+  }
+
+  // Boutons "Annuler" dans chaque modal
+  const loginCancel = document.getElementById("login-cancel") as HTMLButtonElement;
+  if (loginCancel) {
+    loginCancel.addEventListener("click", () => {
+      loginModal.classList.add("hidden");
+    });
+  }
+  const signupCancel = document.getElementById("signup-cancel") as HTMLButtonElement;
+  if (signupCancel) {
+    signupCancel.addEventListener("click", () => {
+      signupModal.classList.add("hidden");
+    });
+  }
+
+  // Bouton "Se connecter"
+  const loginSubmit = document.getElementById("login-submit") as HTMLButtonElement;
+  if (loginSubmit) {
+    loginSubmit.addEventListener("click", () => {
+      const emailInput = document.getElementById("login-email") as HTMLInputElement;
+      const passInput = document.getElementById("login-password") as HTMLInputElement;
+
+      const email = emailInput.value.trim();
+      const password = passInput.value.trim();
+
+      const user = connecterUtilisateur(email, password);
+      if (user) {
+        // OK
+        localStorage.setItem("connectedUserId", user.id.toString());
+        localStorage.setItem("connectedUserPseudo", user.pseudo);
+
+        loginModal.classList.add("hidden");
+        updateHeaderUI();
+      } else {
+        alert("Identifiants invalides ou compte introuvable.");
+      }
+    });
+  }
+
+  // Bouton "S'inscrire"
+  const signupSubmit = document.getElementById("signup-submit") as HTMLButtonElement;
+  if (signupSubmit) {
+    signupSubmit.addEventListener("click", () => {
+      const pseudoInput = document.getElementById("signup-pseudo") as HTMLInputElement;
+      const emailInput = document.getElementById("signup-email") as HTMLInputElement;
+      const passInput = document.getElementById("signup-password") as HTMLInputElement;
+
+      const pseudo = pseudoInput.value.trim();
+      const email = emailInput.value.trim();
+      const password = passInput.value.trim();
+
+      if (!pseudo || !email || !password) {
+        alert("Veuillez remplir tous les champs.");
+        return;
+      }
+
+      const newUser = inscrireUtilisateur(pseudo, email, password);
+      if (newUser) {
+        alert("Inscription réussie ! Vous pouvez vous connecter maintenant.");
+        signupModal.classList.add("hidden");
+      }
+    });
+  }
+}
+
+/* ==================== FONCTION : updateHeaderUI ==================== */
+function updateHeaderUI() {
+  const connectedUserId = localStorage.getItem("connectedUserId");
+  const connectedUserPseudo = localStorage.getItem("connectedUserPseudo");
+
+  const loginBtn = document.querySelector(".login-btn") as HTMLButtonElement;
+  const signupBtn = document.querySelector(".signup-btn") as HTMLButtonElement;
+  const avatarContainer = document.getElementById("avatar-container") as HTMLDivElement;
+  const avatarPseudo = document.getElementById("avatar-pseudo") as HTMLSpanElement;
+  const logoutBtn = document.getElementById("logout-btn") as HTMLButtonElement;
+
+  if (connectedUserId) {
+    // On est loggué
+    if (loginBtn) loginBtn.style.display = "none";
+    if (signupBtn) signupBtn.style.display = "none";
+    if (avatarContainer) avatarContainer.style.display = "flex";
+    if (avatarPseudo) avatarPseudo.textContent = connectedUserPseudo || "User";
+
+    if (logoutBtn) {
+      logoutBtn.addEventListener("click", () => {
+        localStorage.removeItem("connectedUserId");
+        localStorage.removeItem("connectedUserPseudo");
+        updateHeaderUI();
+      });
+    }
+  } else {
+    // Pas connecté
+    if (loginBtn) loginBtn.style.display = "inline-block";
+    if (signupBtn) signupBtn.style.display = "inline-block";
+    if (avatarContainer) avatarContainer.style.display = "none";
+  }
+}
+
+/* ==================== Reste du code (films, etc.) ==================== */
+function initFilmsStuff() {
+  // Ex. initialiser Choices.js
+  const genreSelect = document.getElementById("genres") as HTMLSelectElement;
+  if (genreSelect) {
+    genreChoices = new Choices(genreSelect, {
+      removeItemButton: true,
+      placeholder: true,
+      placeholderValue: "Sélectionnez un ou plusieurs genres",
+    });
+  }
+
+  // auto-complétion, etc.
+  // ...
+}
 
 /* =========================================================
    AUTO-COMPLETION TMDB
@@ -392,4 +536,79 @@ export function modifierFilm(id: number) {
   addButton.textContent = "Enregistrer modifications";
 }
 
-  
+// 1. Sélectionner les boutons "Login" & "Signup" du header
+const loginBtn = document.querySelector(".login-btn") as HTMLButtonElement;
+const signupBtn = document.querySelector(".signup-btn") as HTMLButtonElement;
+
+const loginModal = document.getElementById("login-modal") as HTMLDivElement;
+const signupModal = document.getElementById("signup-modal") as HTMLDivElement;
+
+if (loginBtn) {
+  loginBtn.addEventListener("click", () => {
+    loginModal.classList.remove("hidden");
+  });
+}
+
+if (signupBtn) {
+  signupBtn.addEventListener("click", () => {
+    signupModal.classList.remove("hidden");
+  });
+}
+
+// 2. Gérer les boutons "Annuler"
+const loginCancel = document.getElementById("login-cancel") as HTMLButtonElement;
+if (loginCancel) {
+  loginCancel.addEventListener("click", () => {
+    loginModal.classList.add("hidden");
+  });
+}
+
+const signupCancel = document.getElementById("signup-cancel") as HTMLButtonElement;
+if (signupCancel) {
+  signupCancel.addEventListener("click", () => {
+    signupModal.classList.add("hidden");
+  });
+}
+
+const loginSubmit = document.getElementById("login-submit") as HTMLButtonElement;
+if (loginSubmit) {
+  loginSubmit.addEventListener("click", () => {
+    const emailInput = document.getElementById("login-email") as HTMLInputElement;
+    const passInput = document.getElementById("login-password") as HTMLInputElement;
+
+    const email = emailInput.value.trim();
+    const password = passInput.value.trim();
+
+    const user = connecterUtilisateur(email, password);
+    if (user) {
+      console.log("Connexion réussie pour :", user.pseudo);
+      localStorage.setItem("connectedUserId", user.id.toString());
+      // Fermer la modal
+      loginModal.classList.add("hidden");
+      // Mettre à jour l'UI (masquer boutons login, signup, afficher avatar, etc.)
+      updateHeaderUI();
+    } else {
+      alert("Identifiants invalides");
+    }
+  });
+}
+
+const signupSubmit = document.getElementById("signup-submit") as HTMLButtonElement;
+if (signupSubmit) {
+  signupSubmit.addEventListener("click", () => {
+    const pseudoInput = document.getElementById("signup-pseudo") as HTMLInputElement;
+    const emailInput = document.getElementById("signup-email") as HTMLInputElement;
+    const passInput = document.getElementById("signup-password") as HTMLInputElement;
+
+    const pseudo = pseudoInput.value.trim();
+    const email = emailInput.value.trim();
+    const password = passInput.value.trim();
+
+    // TODO: validations (ex. email non vide, password min 4 chars, etc.)
+    const newUser = inscrireUtilisateur(pseudo, email, password);
+    if (newUser) {
+      alert("Inscription réussie, vous pouvez vous connecter maintenant");
+      signupModal.classList.add("hidden");
+    }
+  });
+}

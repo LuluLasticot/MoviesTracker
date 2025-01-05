@@ -1,8 +1,8 @@
 export class Utilisateur {
   constructor(
     public id: number,
-    public nom: string,
+    public pseudo: string,
     public email: string,
-    // watchlist ? ...
+    public password: string
   ) {}
 }

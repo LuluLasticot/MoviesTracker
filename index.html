@@ -25,6 +25,10 @@
             <button class="login-btn">Login</button>
             <button class="signup-btn">Sign Up</button>
         </div>
+        <div id="avatar-container" style="display: none;">
+            <span id="avatar-pseudo"></span>
+            <button id="logout-btn">Déconnexion</button>
+        </div>
     </nav>
 
     <main>
@@ -282,5 +286,38 @@
         </section>
     </main>
     <script type="module" src="./src/app.ts"></script>
+<!-- ===================== MODAL LOGIN ===================== -->
+<div id="login-modal" class="modal hidden">
+    <div class="modal-content">
+      <h2>Connexion</h2>
+      <label for="login-email">Email</label>
+      <input type="email" id="login-email" />
+  
+      <label for="login-password">Mot de passe</label>
+      <input type="password" id="login-password" />
+  
+      <button id="login-submit">Se connecter</button>
+      <button id="login-cancel">Annuler</button>
+    </div>
+  </div>
+  
+  <!-- ===================== MODAL SIGNUP ===================== -->
+  <div id="signup-modal" class="modal hidden">
+    <div class="modal-content">
+      <h2>Inscription</h2>
+      <label for="signup-pseudo">Pseudo</label>
+      <input type="text" id="signup-pseudo" />
+  
+      <label for="signup-email">Email</label>
+      <input type="email" id="signup-email" />
+  
+      <label for="signup-password">Mot de passe</label>
+      <input type="password" id="signup-password" />
+  
+      <button id="signup-submit">S'inscrire</button>
+      <button id="signup-cancel">Annuler</button>
+    </div>
+  </div>
+  
 </body>
 </html>
