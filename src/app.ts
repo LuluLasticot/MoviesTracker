@@ -1,6 +1,6 @@
 // src/app.ts
 
-import { chargerFilms, afficherFilms, ajouterFilm, supprimerFilmUtilisateur, modifierFilmUtilisateur, initializeFilters } from "./controllers/FilmController";
+import { chargerFilms, afficherFilms, ajouterFilm, supprimerFilmUtilisateur, modifierFilmUtilisateur, initializeFilters, resetForm as resetFormController } from "./controllers/FilmController";
 import { Film } from "./models/Film";
 import { searchMoviesOnTMDB, getMovieDetails } from "./api/tmdb";
 import Choices from "choices.js";
@@ -8,6 +8,7 @@ import "choices.js/public/assets/styles/choices.min.css";
 import { chargerUtilisateurs, connecterUtilisateur, inscrireUtilisateur, getUtilisateurs } from "./controllers/UtilisateurController";
 import { DashboardController } from "./controllers/DashboardController";
 import { WatchlistController } from "./controllers/WatchlistController";
+import { ProfileController } from "./controllers/ProfileController";
 
 // On va stocker nos films dans un tableau global (en mémoire)
 let films: Film[] = [];
@@ -20,6 +21,7 @@ let currentUserId: number | undefined = undefined;
 // Pour le dashboard
 let dashboardController: DashboardController;
 let watchlistController: WatchlistController;
+let profileController: ProfileController;
 
 // Pour l'autocomplete
 let suggestionBox: HTMLUListElement | null = null;
@@ -54,6 +56,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // Initialiser le contrôleur du dashboard après le chargement des films
     dashboardController = new DashboardController();
+    // Initialiser le contrôleur de profil
+    profileController = new ProfileController();
     // Déclencher la mise à jour initiale des statistiques
     document.dispatchEvent(new CustomEvent('filmsUpdated', { detail: { films } }));
     
@@ -426,7 +430,7 @@ export async function ajouterNouveauFilm(): Promise<void> {
   const affiche = (document.getElementById("affiche") as HTMLInputElement).value.trim() || "https://via.placeholder.com/400x600?text=No+Poster";
 
   // Validation des champs obligatoires
-  const champsObligatoires = [
+  let champsObligatoires = [
     { valeur: titre, nom: "Titre", element: titreElement },
     { valeur: annee, nom: "Année", element: anneeElement },
     { valeur: duree, nom: "Durée", element: dureeElement },
@@ -435,6 +439,15 @@ export async function ajouterNouveauFilm(): Promise<void> {
     { valeur: dateDeVisionnage, nom: "Date de visionnage", element: dateElement },
     { valeur: plateforme, nom: "Plateforme", element: plateformeElement }
   ];
+
+  // En mode édition, on ne vérifie que les champs modifiables
+  if (filmEnCoursDeModification !== null) {
+    champsObligatoires = champsObligatoires.filter(champ => 
+      champ.nom === "Note" || 
+      champ.nom === "Date de visionnage" || 
+      champ.nom === "Plateforme"
+    );
+  }
 
   const champsManquants = champsObligatoires
     .filter(champ => {
@@ -477,10 +490,9 @@ export async function ajouterNouveauFilm(): Promise<void> {
 
       // Réinitialiser le mode modification
       filmEnCoursDeModification = null;
-      const addButton = document.getElementById('ajouter-film-btn') as HTMLButtonElement;
-      if (addButton) {
-        addButton.textContent = 'Ajouter le film';
-      }
+      
+      // Utiliser la fonction resetForm du FilmController
+      resetFormController();
     }
   } else {
     // Mode ajout d'un nouveau film
@@ -508,7 +520,6 @@ export async function ajouterNouveauFilm(): Promise<void> {
   }
 
   // Réinitialiser le formulaire et rafraîchir l'affichage
-  resetForm();
   await afficherFilms();
 }
 
@@ -608,68 +619,61 @@ export function updateMovieCount(): void {
   }
 }
 
-// app.ts ou un code JS
+// Gérer la navigation
+function handleNavigation(text: string) {
+  // Cacher toutes les sections d'abord
+  const sections = [
+    '.hero',
+    '.movie-form',
+    '.movies-list',
+    '.dashboard-section',
+    '#profile-section',
+    '.watchlist-section'
+  ];
+  
+  sections.forEach(section => {
+    const element = section.startsWith('#') 
+      ? document.getElementById(section.slice(1))
+      : document.querySelector(section);
+    element?.classList.add('hidden');
+  });
+
+  // Afficher la section appropriée
+  switch (text) {
+    case "Home":
+      document.querySelector('.hero')?.classList.remove('hidden');
+      document.querySelector('.movie-form')?.classList.remove('hidden');
+      document.querySelector('.movies-list')?.classList.remove('hidden');
+      break;
+    case "Dashboard":
+      document.querySelector('.dashboard-section')?.classList.remove('hidden');
+      break;
+    case "Watchlist":
+      document.querySelector('.watchlist-section')?.classList.remove('hidden');
+      break;
+    case "Profile":
+      document.getElementById('profile-section')?.classList.remove('hidden');
+      break;
+  }
+}
+
+// Gérer les clics sur les liens de navigation
 const navLinks = document.querySelectorAll(".nav-links a");
 navLinks.forEach(link => {
-  link.addEventListener("click", (e) => {
-    e.preventDefault(); // on empêche la navigation
-    const text = link.textContent?.trim();
-    if (text === "Dashboard") {
-      showDashboardSection();
-    } else if (text === "Home") {
-      showHomeSection();
-    } else if (text === "Watchlist") {
-      showWatchlistSection();
-    }
-    // etc. pour Watchlist, Profile...
-    handleNavUnderline(link); // pour gérer l'underline rouge
+  link.addEventListener('click', (e) => {
+    e.preventDefault();
+    const text = (e.target as HTMLElement).textContent?.trim() || "";
+    handleNavigation(text);
+    handleNavUnderline(link);
   });
 });
 
-function showDashboardSection() {
-  // 1. Masquer la hero section, la movies-list, etc.
-  const hero = document.querySelector(".hero") as HTMLElement;
-  const movieForm = document.querySelector(".movie-form") as HTMLElement;
-  const moviesList = document.querySelector(".movies-list") as HTMLElement;
-  hero.style.display = "none";
-  movieForm.style.display = "none";
-  moviesList.style.display = "none";
-
-  // 2. Afficher la dashboard-section
-  const dashboardSection = document.querySelector(".dashboard-section") as HTMLElement;
-  dashboardSection.style.display = "block";
-
-  // (Eventuellement, calculer de vraies stats et mettre à jour les nombres)
-}
-
-function showHomeSection() {
-  // 1. Ré-afficher hero, movie-form, movies-list
-  const hero = document.querySelector(".hero") as HTMLElement;
-  hero.style.display = "block";
-  const movieForm = document.querySelector(".movie-form") as HTMLElement;
-  movieForm.style.display = "block";
-  const moviesList = document.querySelector(".movies-list") as HTMLElement;
-  moviesList.style.display = "block";
-
-  // 2. Cacher la dashboard-section
-  const dashboardSection = document.querySelector(".dashboard-section") as HTMLElement;
-  dashboardSection.style.display = "none";
-}
-
-function showWatchlistSection() {
-  document.querySelector('.hero')?.classList.add('hidden');
-  document.querySelector('.movie-form')?.classList.add('hidden');
-  document.querySelector('.movies-list')?.classList.add('hidden');
-  document.querySelector('.dashboard-section')?.classList.add('hidden');
-  document.querySelector('.watchlist-section')?.classList.remove('hidden');
-}
-
-function handleNavUnderline(clickedLink: Element): void {
-  if (!(clickedLink instanceof HTMLAnchorElement)) return;
+function handleNavUnderline(link: Element): void {
+  if (!(link instanceof HTMLAnchorElement)) return;
   
   const navLinks = document.querySelectorAll(".nav-links a");
   navLinks.forEach((link) => link.classList.remove("active"));
-  clickedLink.classList.add("active");
+  link.classList.add("active");
 }
 
 /**
@@ -732,3 +736,6 @@ async function fillFormWithTMDB(movieId: number): Promise<void> {
     genreChoices.setChoiceByValue(matchedGenres);
   }
 }
+
+// app.ts ou un code JS
+// ... (reste du code inchangé)

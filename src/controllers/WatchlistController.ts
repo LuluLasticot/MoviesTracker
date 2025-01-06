@@ -1,6 +1,7 @@
 import { WatchlistItem } from "../models/WatchlistItem";
 import { getMovieDetails, searchMoviesOnTMDB } from "../api/tmdb";
 import { ajouterFilm } from "./FilmController";
+import { Film } from "../models/Film";
 
 export class WatchlistController {
     private watchlist: WatchlistItem[] = [];
@@ -116,23 +117,23 @@ export class WatchlistController {
             const movieDetails = await getMovieDetails(movieId);
             
             // Créer l'objet film pour l'ajout
-            const nouveauFilm = {
-                id: movieId,
-                titre: film.titre,
-                annee: film.annee,
-                duree: movieDetails.runtime || 120,
-                realisateur: film.realisateur,
-                distribution: movieDetails.credits?.cast?.slice(0, 5).map(actor => actor.name).join(', ') || '',
-                synopsis: movieDetails.overview || '',
-                note: 0, // L'utilisateur pourra modifier la note plus tard
-                dateVisionnage: new Date().toISOString().split('T')[0],
-                plateforme: 'Autre',
-                affiche: film.affiche,
-                genres: movieDetails.genres?.map(g => g.name) || []
-            };
+            const nouveauFilm = new Film(
+                movieId,
+                film.titre,
+                film.annee,
+                movieDetails.genres?.map(g => g.name) || [],
+                movieDetails.runtime || 120,
+                film.realisateur,
+                movieDetails.credits?.cast?.slice(0, 5).map(actor => actor.name) || [],
+                movieDetails.overview || '',
+                0, // L'utilisateur pourra modifier la note plus tard
+                new Date().toISOString().split('T')[0],
+                'Autre',
+                `https://image.tmdb.org/t/p/w500${movieDetails.poster_path || film.affiche}`
+            );
 
             // Ajouter aux films vus
-            await ajouterFilm(nouveauFilm, this.currentUserId);
+            ajouterFilm(this.currentUserId, nouveauFilm);
 
             // Supprimer de la watchlist
             this.supprimerFilm(movieId);

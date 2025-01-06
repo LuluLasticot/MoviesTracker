@@ -33,9 +33,19 @@
 
     <main>
         <section class="hero">
+            <div class="video-background">
+                <video autoplay muted loop playsinline>
+                    <source src="assets/videos/cinema-montage.mp4" type="video/mp4">
+                </video>
+                <div class="video-overlay"></div>
+            </div>
             <h1>JOIN THE ULTIMATE<br>MOVIE TRACKING EXPERIENCE.</h1>
             <button class="dashboard-btn">Accéder au dashboard →</button>
             <p class="movie-count">Vous avez ajouté <span>00</span> films.</p>
+            <div class="scroll-indicator">
+                <p>Scrollez pour ajouter un film</p>
+                <i class="fas fa-chevron-down bounce"></i>
+            </div>
         </section>
 
         <!-- ===================== MOVIE FORM SECTION ===================== -->
@@ -405,7 +415,7 @@
                     <div class="stat-content">
                         <h3>Films vus</h3>
                         <div class="stat-value">42</div>
-                        <div class="stat-subtitle">cette année</div>
+                        <div class="stat-subtitle">jusqu'à maintenant</div>
                     </div>
                 </div>
         
@@ -531,6 +541,20 @@
             <header class="watchlist-header">
                 <h1>Ma liste de films à voir</h1>
                 <p>Organisez et gardez une trace des films que vous souhaitez regarder.</p>
+                <!-- Ajout de la barre de recherche -->
+                <div class="watchlist-search">
+                    <div class="search-container">
+                        <input 
+                            type="text" 
+                            id="watchlist-search" 
+                            placeholder="Rechercher un film à ajouter..."
+                            autocomplete="off"
+                        >
+                        <div id="watchlist-suggestions" class="suggestions-container">
+                            <!-- Les suggestions seront générées ici -->
+                        </div>
+                    </div>
+                </div>
             </header>
 
             <div class="watchlist-controls">
@@ -553,6 +577,65 @@
 
             <div class="watchlist-grid">
                 <!-- Les films seront générés dynamiquement ici -->
+            </div>
+        </section>
+
+        <!-- Section Profile -->
+        <section id="profile-section" class="hidden section-container">
+            <div class="profile-container">
+                <!-- Informations du compte -->
+                <div class="account-info-card">
+                    <h2>Informations du compte</h2>
+                    <div class="profile-avatar">
+                        <img id="profile-avatar" src="https://www.gravatar.com/avatar/default?s=200" alt="Avatar">
+                    </div>
+                    <form id="profile-form" class="profile-form">
+                        <div class="form-group-profile">
+                            <label for="profile-pseudo">Pseudo</label>
+                            <input type="text" id="profile-pseudo" name="pseudo" required>
+                        </div>
+                        <div class="form-group-profile">
+                            <label for="profile-email">Email</label>
+                            <input type="email" id="profile-email" name="email" required>
+                        </div>
+                        <div class="form-group-profile">
+                            <label for="profile-password">Nouveau mot de passe (laisser vide pour ne pas changer)</label>
+                            <input type="password" id="profile-password" name="password">
+                        </div>
+                        <button type="submit" class="btn-primary">Sauvegarder les modifications</button>
+                    </form>
+                </div>
+
+                <!-- Statistiques -->
+                <div class="stats-container">
+                    <h2>Vos statistiques</h2>
+                    <div class="stats-grid">
+                        <!-- Temps total de visionnage -->
+                        <div class="stats-card">
+                            <i class="fas fa-clock"></i>
+                            <h3>Temps total de visionnage</h3>
+                            <p id="total-watch-time">0 heures</p>
+                        </div>
+                        <!-- Genre préféré -->
+                        <div class="stats-card">
+                            <i class="fas fa-film"></i>
+                            <h3>Genre préféré</h3>
+                            <p id="favorite-genre">-</p>
+                        </div>
+                        <!-- Réalisateur favori -->
+                        <div class="stats-card">
+                            <i class="fas fa-video"></i>
+                            <h3>Réalisateur le plus regardé</h3>
+                            <p id="favorite-director">-</p>
+                        </div>
+                        <!-- Films vus cette année -->
+                        <div class="stats-card">
+                            <i class="fas fa-calendar-alt"></i>
+                            <h3>Films vus en <span id="current-year">2025</span></h3>
+                            <p id="movies-this-year">0 films</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
     </main>

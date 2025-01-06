@@ -4,6 +4,11 @@
   --text-color: #FFFFFF;
   --card-bg: #1A1A1A;
   --input-bg: #141414;
+  --accent-color: #FFD700;
+  --accent-color-hover: #FFC400;
+  --error-color: #FF3B3B;
+  --text-secondary: #AAAAAA;
+  --border-color: #2A2A2A;
 }
 
 * {
@@ -20,15 +25,16 @@ body {
 
 /* Navbar */
 .navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1rem 4rem;
-  background-color: rgba(10, 10, 10, 0.8);
-  backdrop-filter: blur(10px);
-  position: fixed;
-  width: 100%;
-  top: 0;
+  padding: 1rem 2rem;
+  background-color: var(--bg-color);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   z-index: 1000;
 }
 
@@ -118,30 +124,126 @@ body {
 
 /* Hero Section */
 .hero {
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  padding: 2rem;
+    position: relative;
+    min-height: calc(100vh - 4rem);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 2rem;
+    text-align: center;
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    margin-top: 0;
+}
+
+.movie-count {
+    font-size: 1.2rem;
+    margin: 1rem 0 2rem 0;
+    opacity: 0.9;
+}
+
+.movie-count span {
+    font-weight: bold;
+    color: #fff ;
+}
+
+/* Correction de l'indicateur de défilement */
+.scroll-indicator {
+    position: relative; /* Changé de absolute à relative */
+    text-align: center;
+    color: white;
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+    margin-top: 1rem;
+    width: 100%;
+}
+
+.scroll-indicator p {
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.scroll-indicator::after {
+    content: "↓";
+    display: block;
+    font-size: 2rem;
+    margin-top: 0.5rem;
+    animation: bounce 2s infinite;
+}
+
+.video-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    z-index: -1;
+}
+
+.video-background video {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    min-width: 100%;
+    min-height: 100%;
+    width: auto;
+    height: auto;
+    transform: translateX(-50%) translateY(-50%);
+    object-fit: cover;
+}
+
+.video-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7); /* Overlay sombre pour la lisibilité */
+    background: linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0.8) 0%,
+        rgba(0, 0, 0, 0.6) 50%,
+        rgba(0, 0, 0, 0.8) 100%
+    );
 }
 
 .hero h1 {
-  font-size: 3.5rem;
-  margin-bottom: 2rem;
-  line-height: 1.2;
+    font-size: 3rem;
+    margin-bottom: 2rem;
+    line-height: 1.2;
+    position: relative;
+    z-index: 1;
 }
 
+.hero .dashboard-btn,
+.hero .movie-count,
+.hero .scroll-indicator {
+    position: relative;
+    z-index: 1;
+}
+
+/* Ajustement du bouton dashboard */
 .dashboard-btn {
-  background: var(--primary-color);
-  color: var(--text-color);
-  padding: 1rem 2rem;
-  border: none;
-  border-radius: 50px;
-  font-size: 1rem;
-  cursor: pointer;
-  margin-bottom: 2rem;
+    background-color: var(--error-color) !important; /* Rouge */
+    color: white !important;
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 50px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    margin: 1rem 0;
+}
+
+.dashboard-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    background-color: #ff3b3b !important; /* Rouge plus vif au hover */
 }
 
 .movie-count {
@@ -203,9 +305,48 @@ textarea {
   font-size: 1rem;
 }
 
+/* Style pour les champs désactivés lors de la modification */
+.form-group input:disabled,
+.form-group select:disabled,
+.form-group textarea:disabled {
+  background-color: var(--text-muted);
+  color: var(--text-color);
+  cursor: not-allowed;
+  opacity: 0.5;
+  border: 1px solid var(--border-color);
+}
+
+/* Style pour mettre en évidence les champs modifiables */
+.form-group.modifiable {
+  position: relative;
+}
+
+.form-group.modifiable::before {
+  content: "Modifiable";
+  position: absolute;
+  top: -20px;
+  right: 0;
+  font-size: 0.8rem;
+  color: var(--accent-color);
+  font-style: italic;
+}
+
+.form-group.modifiable input,
+.form-group.modifiable select {
+  border: 2px solid var(--accent-color);
+  background-color: var(--bg-color);
+  box-shadow: 0 0 5px var(--accent-color);
+}
+
+.form-group.modifiable label {
+  color: var(--accent-color);
+  font-weight: bold;
+}
+
 /* Movies List */
 .movies-list {
   padding: 2rem 4rem;
+  margin-top: 1rem;
 }
 
 .section-header {
@@ -446,7 +587,7 @@ textarea {
   width: 100%;
   height: 100%;
   background: rgba(0,0,0,0.6);
-  z-index: 9999;
+  z-index: 1001;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -514,6 +655,7 @@ textarea {
   padding: 2rem;
   max-width: 1400px;
   margin: 0 auto;
+  margin-top: 1rem;
 }
 
 .dashboard-header {
@@ -694,7 +836,7 @@ textarea {
 
 .platform-item i {
   font-size: 1.5rem;
-  color: var(--accent-color);
+  color: var(--primary-color);
 }
 
 .platform-info {
@@ -703,32 +845,35 @@ textarea {
 
 /* Top Movies */
 .top-movies {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-}
-
-.top-movie-card {
-  position: relative;
-  border-radius: 0.5rem;
-  overflow: hidden;
-  aspect-ratio: 2/3;
-}
-
-.top-movie-card img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.movie-overlay {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  display: flex;
+  gap: 1.5rem;
   padding: 1rem;
-  background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
-  color: white;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch; /* Pour un défilement fluide sur iOS */
+}
+
+.top-movies::-webkit-scrollbar {
+  height: 8px;
+}
+
+.top-movies::-webkit-scrollbar-track {
+  background: var(--surface-color);
+  border-radius: 4px;
+}
+
+.top-movies::-webkit-scrollbar-thumb {
+  background: var(--primary-color);
+  border-radius: 4px;
+}
+
+.top-movies .movie-card {
+  flex: 0 0 200px; /* Largeur fixe, pas de redimensionnement */
+  background: var(--surface-color);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease;
 }
 
 /* Badges */
@@ -751,7 +896,7 @@ textarea {
 
 .badge i {
   font-size: 1.5rem;
-  color: var(--accent-color);
+  color: var(--primary-color);
 }
 
 .badge span {
@@ -774,7 +919,7 @@ textarea {
 
 .record-item i {
   font-size: 1.5rem;
-  color: var(--accent-color);
+  color: var(--primary-color);
 }
 
 /* Styles pour les cartes des personnes (acteurs et réalisateurs) */
@@ -839,38 +984,101 @@ textarea {
 
 /* Styles pour le top 5 des films */
 .top-rated-films {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
+    display: flex;
+    gap: 1.5rem;
+    padding: 1rem;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch; /* Pour un défilement fluide sur iOS */
+    margin-bottom: 1rem;
 }
 
-.top-film {
-  display: flex;
-  align-items: center;
-  padding: 10px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
+.top-rated-films::-webkit-scrollbar {
+    height: 8px;
 }
 
-.film-poster {
-  width: 60px;
-  height: 90px;
-  object-fit: cover;
-  border-radius: 4px;
-  margin-right: 15px;
+.top-rated-films::-webkit-scrollbar-track {
+    background: var(--surface-color);
+    border-radius: 4px;
 }
 
-.film-info {
-  flex-grow: 1;
+.top-rated-films::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+    border-radius: 4px;
 }
 
-.film-title {
-  font-weight: bold;
-  margin-bottom: 5px;
+.top-rated-films .movie-card {
+    flex: 0 0 200px;
+    background: var(--surface-color);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease;
 }
 
-.film-rating {
-  color: #FFD700;
+.top-rated-films .movie-card:hover {
+    transform: translateY(-5px);
+}
+
+.top-rated-films .movie-poster {
+    position: relative;
+    width: 100%;
+    padding-bottom: 150%; /* 2:3 aspect ratio */
+}
+
+.top-rated-films .movie-poster img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.top-rated-films .movie-rating {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: var(--primary-color);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+.top-rated-films .movie-info {
+    padding: 1rem;
+}
+
+.top-rated-films .movie-title {
+    font-size: 1rem;
+    font-weight: bold;
+    margin: 0 0 0.5rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.top-rated-films .movie-year,
+.top-rated-films .movie-director {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin: 0.25rem 0;
+}
+
+.top-rated-films .movie-genres {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.top-rated-films .genre-tag {
+    background: var(--surface-color-hover);
+    color: var(--text-color);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
 }
 
 /* Responsive Design */
@@ -968,7 +1176,7 @@ textarea {
   gap: 0.5rem;
   padding: 0.5rem 1rem;
   margin-top: auto;
-  background: var(--accent-color);
+  background: var(--primary-color);
   color: white;
   border: none;
   border-radius: 0.25rem;
@@ -983,6 +1191,7 @@ textarea {
 /* Watchlist Section */
 .watchlist-section {
   padding: 2rem;
+  margin-top: 1rem;
 }
 
 .watchlist-header {
@@ -1138,7 +1347,7 @@ textarea {
 
 .watchlist-search input:focus {
     outline: none;
-    border-color: var(--accent-color);
+    border-color: var(--primary-color);
     background: rgba(255, 255, 255, 0.1);
 }
 
@@ -1197,7 +1406,7 @@ textarea {
 
 .watchlist-suggestion .add-to-watchlist {
     padding: 0.5rem 1rem;
-    background: var(--accent-color);
+    background: var(--primary-color);
     border: none;
     border-radius: 4px;
     color: white;
@@ -1220,4 +1429,180 @@ textarea {
 .mark-as-watched[disabled] {
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+/* Styles pour la section profil */
+.profile-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 2rem;
+  margin-top: 1rem;
+}
+
+.account-info-card {
+  background: var(--card-bg);
+  border-radius: 10px;
+  padding: 2rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.profile-avatar {
+  width: 150px;
+  height: 150px;
+  margin: 0 auto 2rem;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid var(--primary-color);
+}
+
+.profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-group-profile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group-profile label {
+  color: var(--text-color);
+  font-weight: 500;
+}
+
+.form-group-profile input {
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 5px;
+  background: var(--input-bg);
+  color: var(--text-color);
+}
+
+.stats-container {
+  background: var(--card-bg);
+  border-radius: 10px;
+  padding: 2rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.stats-card {
+  background: var(--bg-color);
+  border-radius: 8px;
+  padding: 1.5rem;
+  text-align: center;
+  transition: transform 0.2s;
+}
+
+.stats-card:hover {
+  transform: translateY(-5px);
+}
+
+.stats-card i {
+  font-size: 2rem;
+  color: var(--accent-color);
+  margin-bottom: 1rem;
+}
+
+.stats-card h3 {
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+  color: var(--text-color);
+}
+
+.stats-card p {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--accent-color);
+}
+
+@media (max-width: 768px) {
+  .profile-container {
+      grid-template-columns: 1fr;
+  }
+}
+
+main {
+    padding-top: calc(4rem + 20px); /* Hauteur de la navbar + marge supplémentaire */
+}
+
+/* Ajustement des sections spécifiques si nécessaire */
+.hero,
+.movie-form,
+.movies-list,
+.dashboard-section,
+.watchlist-section,
+#profile-section {
+    margin-top: 1rem;
+}
+
+/* Assurer que les modales apparaissent au-dessus de la navbar */
+.modal {
+    z-index: 1001;
+}
+
+/* Style pour l'indicateur de défilement */
+.scroll-indicator {
+    position: relative;
+    text-align: center;
+    color: white;
+    opacity: 0.8;
+    transition: opacity 0.3s ease;
+    margin-top: 1rem;
+    width: 100%;
+}
+
+.scroll-indicator p {
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    white-space: nowrap;
+}
+
+.scroll-indicator::after {
+    content: "↓";
+    display: block;
+    font-size: 2rem;
+    margin-top: 0.5rem;
+    animation: bounce 2s infinite;
+}
+
+/* Animation de rebond pour la flèche */
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+    }
+    40% {
+        transform: translateY(-10px);
+    }
+    60% {
+        transform: translateY(-5px);
+    }
+}
+
+.bounce {
+    animation: bounce 2s infinite;
+}
+
+/* Style pour l'indicateur de défilement avec un symbole Unicode */
+.scroll-indicator i {
+    display: none; /* On cache l'icône Font Awesome pour l'instant */
 }

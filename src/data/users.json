@@ -4,5 +4,17 @@
     "pseudo": "prof",
     "email": "prof@example.com",
     "password": "prof"
+  },
+  {
+    "id": 2,
+    "pseudo": "lulu",
+    "email": "lulu@example.com",
+    "password": "lulu"
+  },
+  {
+    "id": 3,
+    "pseudo": "robin",
+    "email": "robin@example.com",
+    "password": "robin"
   }
 ]

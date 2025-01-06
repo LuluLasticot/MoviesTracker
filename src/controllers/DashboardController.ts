@@ -190,6 +190,28 @@ export class DashboardController {
                 `).join('');
         }
 
+        // Mettre à jour le top 5 des films préférés
+        const topRatedFilmsContainer = document.querySelector('.top-rated-films');
+        if (topRatedFilmsContainer) {
+            topRatedFilmsContainer.innerHTML = this.stats.topRatedFilms
+                .map(film => `
+                    <div class="movie-card">
+                        <div class="movie-poster">
+                            <img src="${film.affiche || 'https://via.placeholder.com/400x600?text=No+Poster'}" alt="${film.titre}">
+                            <div class="movie-rating">${film.note}/10</div>
+                        </div>
+                        <div class="movie-info">
+                            <h3 class="movie-title">${film.titre}</h3>
+                            <p class="movie-year">${film.annee}</p>
+                            <p class="movie-director">${film.realisateur}</p>
+                            <div class="movie-genres">
+                                ${film.genres.map(genre => `<span class="genre-tag">${genre}</span>`).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+        }
+
         // Mettre à jour les records
         const recordsList = document.querySelector('.records-list');
         if (recordsList) {
