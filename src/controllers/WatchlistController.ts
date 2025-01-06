@@ -103,6 +103,11 @@ export class WatchlistController {
 
     public async marquerCommeVu(movieId: number) {
         try {
+            if (!this.currentUserId) {
+                alert("Vous devez être connecté pour marquer un film comme vu.");
+                return;
+            }
+
             // Trouver le film dans la watchlist
             const film = this.watchlist.find(item => item.id === movieId);
             if (!film) return;
@@ -127,7 +132,7 @@ export class WatchlistController {
             };
 
             // Ajouter aux films vus
-            await ajouterFilm(nouveauFilm);
+            await ajouterFilm(nouveauFilm, this.currentUserId);
 
             // Supprimer de la watchlist
             this.supprimerFilm(movieId);
