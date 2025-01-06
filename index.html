@@ -122,6 +122,51 @@
                     <option value="1993">1993</option>
                     <option value="1992">1992</option>
                     <option value="1991">1991</option>
+                    <option value="1990">1990</option>
+                    <option value="1989">1989</option>
+                    <option value="1988">1988</option>
+                    <option value="1987">1987</option>
+                    <option value="1986">1986</option>
+                    <option value="1985">1985</option>
+                    <option value="1984">1984</option>
+                    <option value="1983">1983</option>
+                    <option value="1982">1982</option>
+                    <option value="1981">1981</option>
+                    <option value="1980">1980</option>
+                    <option value="1979">1979</option>
+                    <option value="1978">1978</option>
+                    <option value="1977">1977</option>
+                    <option value="1976">1976</option>
+                    <option value="1975">1975</option>
+                    <option value="1974">1974</option>
+                    <option value="1973">1973</option>
+                    <option value="1972">1972</option>
+                    <option value="1971">1971</option>
+                    <option value="1970">1970</option>
+                    <option value="1969">1969</option>
+                    <option value="1968">1968</option>
+                    <option value="1967">1967</option>
+                    <option value="1966">1966</option>
+                    <option value="1965">1965</option>
+                    <option value="1964">1964</option>
+                    <option value="1963">1963</option>
+                    <option value="1962">1962</option>
+                    <option value="1961">1961</option>
+                    <option value="1960">1960</option>
+                    <option value="1959">1959</option>
+                    <option value="1958">1958</option>
+                    <option value="1957">1957</option>
+                    <option value="1956">1956</option>
+                    <option value="1955">1955</option>
+                    <option value="1954">1954</option>
+                    <option value="1953">1953</option>
+                    <option value="1952">1952</option>
+                    <option value="1951">1951</option>
+                    <option value="1950">1950</option>  
+                    <option value="1949">1949</option>
+                    <option value="1948">1948</option>
+                    <option value="1947">1947</option>
+                    <option value="1946">1946</option>
                     <option value="1900">1900</option>
                     <option value="1895">1895</option>
                 </select>
@@ -237,17 +282,77 @@
             </div>
         </section>
   <!-- ===================== END MOVIE FORM SECTION ===================== -->
-  
-
         <section class="movies-list">
             <div class="section-header">
                 <h2>Films vus</h2>
-                <select class="sort-select">
-                    <option value="">-- Tri par --</option>
-                    <option value="Note">Note</option>
-                    <option value="Titre">Titre</option>
-                    <option value="Année">Année</option>
-                </select>
+                <div class="filters-container">
+                    <!-- Tri -->
+                    <div class="filter-group">
+                        <label for="sort-select">Trier par</label>
+                        <select id="sort-select" class="filter-select">
+                            <option value="date-desc">Date (Plus récent)</option>
+                            <option value="date-asc">Date (Plus ancien)</option>
+                            <option value="title-asc">Titre (A-Z)</option>
+                            <option value="title-desc">Titre (Z-A)</option>
+                            <option value="rating-desc">Note (Plus haute)</option>
+                            <option value="rating-asc">Note (Plus basse)</option>
+                            <option value="year-desc">Année (Plus récent)</option>
+                            <option value="year-asc">Année (Plus ancien)</option>
+                        </select>
+                    </div>
+                
+                    <!-- Filtres -->
+                    <div class="filter-group">
+                        <label for="platform-select">Plateforme</label>
+                        <select id="platform-select" class="filter-select">
+                            <option value="">Toutes</option>
+                            <option value="Netflix">Netflix</option>
+                            <option value="Prime Video">Prime Video</option>
+                            <option value="Disney+">Disney+</option>
+                            <option value="Canal+">Canal+</option>
+                            <option value="Autre">Autre</option>
+                        </select>
+                    </div>
+                
+                    <div class="filter-group">
+                        <label for="genre-select">Genre</label>
+                        <select id="genre-select" class="filter-select">
+                            <option value="">Tous</option>
+                            <option value="Action">Action</option>
+                            <option value="Aventure">Aventure</option>
+                            <option value="Animation">Animation</option>
+                            <option value="Comédie">Comédie</option>
+                            <option value="Crime">Crime</option>
+                            <option value="Documentaire">Documentaire</option>
+                            <option value="Drame">Drame</option>
+                            <option value="Famille">Famille</option>
+                            <option value="Fantastique">Fantastique</option>
+                            <option value="Guerre">Guerre</option>
+                            <option value="Histoire">Histoire</option>
+                            <option value="Horreur">Horreur</option>
+                            <option value="Musique">Musique</option>
+                            <option value="Mystère">Mystère</option>
+                            <option value="Romance">Romance</option>
+                            <option value="Science-fiction">Science-fiction</option>
+                            <option value="Thriller">Thriller</option>
+                            <option value="Western">Western</option>
+                        </select>
+                    </div>
+                
+                    <div class="filter-group">
+                        <label for="year-range">Année</label>
+                        <div class="year-range-inputs">
+                            <input type="number" id="year-min" class="year-input" placeholder="Min" min="1900" max="2025">
+                            <span>-</span>
+                            <input type="number" id="year-max" class="year-input" placeholder="Max" min="1900" max="2025">
+                        </div>
+                    </div>
+                
+                    <!-- Bouton de réinitialisation -->
+                    <button id="reset-filters" class="reset-btn">
+                        <i class="fas fa-undo"></i> Réinitialiser
+                    </button>
+                </div>
             </div>
             <div class="movies-grid">
                 <!--<div class="movie-card">
@@ -284,6 +389,142 @@
                 </div>-->
             </div>
         </section>
+        <!-- ===================== DASHBOARD SECTION ===================== -->
+        <section class="dashboard-section hidden">
+            <header class="dashboard-header">
+                <h1>Vos statistiques cinématographiques</h1>
+                <p>Découvrez vos habitudes de visionnage et vos préférences en un clin d'œil.</p>
+            </header>
+        
+            <!-- Stats Cards -->
+            <div class="stats-cards">
+                <div class="stat-card films-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-film"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>Films vus</h3>
+                        <div class="stat-value">42</div>
+                        <div class="stat-subtitle">cette année</div>
+                    </div>
+                </div>
+        
+                <div class="stat-card time-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>Temps total</h3>
+                        <div class="stat-value">126h</div>
+                        <div class="stat-subtitle">≈ 5.25 jours</div>
+                    </div>
+                </div>
+        
+                <div class="stat-card rating-card">
+                    <div class="stat-icon">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>Note moyenne</h3>
+                        <div class="stat-value">8.2/10</div>
+                        <div class="stat-subtitle">sur tous vos films</div>
+                    </div>
+                </div>
+            </div>
+        
+            <!-- Main Stats Grid -->
+            <div class="dashboard-grid">
+                <!-- Films par année -->
+                <div class="dashboard-card chart-card">
+                    <h3>Films vus par année</h3>
+                    <div class="year-chart">
+                        <!-- Les barres seront générées dynamiquement -->
+                    </div>
+                </div>
+        
+                <!-- Réalisateurs préférés -->
+                <div class="dashboard-card">
+                    <h3>Réalisateurs préférés</h3>
+                    <div class="top-directors">
+                        <!-- Les cartes des réalisateurs seront générées dynamiquement -->
+                    </div>
+                </div>
+        
+                <!-- Acteurs les plus vus -->
+                <div class="dashboard-card">
+                    <h3>Acteurs préférés</h3>
+                    <div class="top-actors">
+                        <!-- Les cartes des acteurs seront générées dynamiquement -->
+                    </div>
+                </div>
+        
+                <!-- Genres préférés -->
+                <div class="dashboard-card">
+                    <h3>Genres préférés</h3>
+                    <div class="genres-chart">
+                        <!-- Les statistiques de genres seront générées dynamiquement -->
+                    </div>
+                </div>
+        
+                <!-- Plateformes -->
+                <div class="dashboard-card">
+                    <h3>Plateformes</h3>
+                    <div class="platforms-list">
+                        <!-- Les statistiques de plateformes seront générées dynamiquement -->
+                    </div>
+                </div>
+        
+                <!-- Top 5 Films -->
+                <div class="dashboard-card">
+                    <h3>Top 5 des films</h3>
+                    <div class="top-rated-films">
+                        <!-- La liste des meilleurs films sera générée dynamiquement -->
+                    </div>
+                </div>
+        
+                <!-- Records -->
+                <div class="dashboard-card">
+                    <h3>Records</h3>
+                    <div class="records-list">
+                        <div class="record-item">
+                            <i class="fas fa-hourglass-start"></i>
+                            <div class="record-info">
+                                <h4>Film le plus court</h4>
+                                <p>La Jetée (28 min)</p>
+                            </div>
+                        </div>
+                        <div class="record-item">
+                            <i class="fas fa-hourglass-end"></i>
+                            <div class="record-info">
+                                <h4>Film le plus long</h4>
+                                <p>Le Parrain (175 min)</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+        
+                <!-- Badges -->
+                <div class="dashboard-card">
+                    <h3>Vos badges</h3>
+                    <div class="badges-grid">
+                        <div class="badge">
+                            <i class="fas fa-award"></i>
+                            <span>Cinéphile</span>
+                        </div>
+                        <div class="badge">
+                            <i class="fas fa-rocket"></i>
+                            <span>Expert SF</span>
+                        </div>
+                        <div class="badge">
+                            <i class="fas fa-trophy"></i>
+                            <span>Nolan Fan</span>
+                        </div>
+                        <!-- Autres badges -->
+                    </div>
+                </div>
+            </div>
+        </section>
+<!-- ===================== END DASHBOARD SECTION ===================== -->
     </main>
     <script type="module" src="./src/app.ts"></script>
 <!-- ===================== MODAL LOGIN ===================== -->
