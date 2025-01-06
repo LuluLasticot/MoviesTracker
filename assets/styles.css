@@ -1113,3 +1113,98 @@ textarea {
 .remove-from-watchlist {
   color: #ff4444;
 }
+
+/* Watchlist Search */
+.watchlist-search {
+    margin-bottom: 2rem;
+    padding: 0 1rem;
+}
+
+.watchlist-search .search-container {
+    position: relative;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.watchlist-search input {
+    width: 100%;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    color: white;
+    font-size: 1rem;
+}
+
+.watchlist-search input:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.watchlist-search .suggestions-container {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #1a1a1a;
+    border-radius: 8px;
+    margin-top: 0.5rem;
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 1000;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: none;
+}
+
+.watchlist-search .suggestions-container.active {
+    display: block;
+}
+
+.watchlist-suggestion {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.watchlist-suggestion:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.watchlist-suggestion img {
+    width: 40px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 4px;
+    margin-right: 1rem;
+}
+
+.watchlist-suggestion .suggestion-info {
+    flex: 1;
+}
+
+.watchlist-suggestion .suggestion-title {
+    font-weight: bold;
+    margin-bottom: 0.25rem;
+}
+
+.watchlist-suggestion .suggestion-year {
+    font-size: 0.9rem;
+    color: #888;
+}
+
+.watchlist-suggestion .add-to-watchlist {
+    padding: 0.5rem 1rem;
+    background: var(--accent-color);
+    border: none;
+    border-radius: 4px;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.watchlist-suggestion .add-to-watchlist:hover {
+    background-color: var(--accent-color-hover);
+}

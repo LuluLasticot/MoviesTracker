@@ -1,5 +1,5 @@
 import { WatchlistItem } from "../models/WatchlistItem";
-import { getMovieDetails } from "../api/tmdb";
+import { getMovieDetails, searchMoviesOnTMDB } from "../api/tmdb";
 
 export class WatchlistController {
     private watchlist: WatchlistItem[] = [];
@@ -8,6 +8,7 @@ export class WatchlistController {
     constructor(userId?: number) {
         this.currentUserId = userId;
         this.loadWatchlist();
+        this.initializeSearch();
     }
 
     private async loadWatchlist() {
@@ -173,6 +174,92 @@ export class WatchlistController {
                 if (confirm('Voulez-vous vraiment retirer ce film de votre watchlist ?')) {
                     this.supprimerFilm(movieId);
                 }
+            });
+        });
+    }
+
+    private initializeSearch() {
+        const searchInput = document.getElementById('watchlist-search') as HTMLInputElement;
+        const suggestionsContainer = document.getElementById('watchlist-suggestions');
+        let debounceTimeout: NodeJS.Timeout;
+
+        if (searchInput && suggestionsContainer) {
+            searchInput.addEventListener('input', async (e) => {
+                const target = e.target as HTMLInputElement;
+                const query = target.value.trim();
+
+                // Clear previous timeout
+                clearTimeout(debounceTimeout);
+
+                // Clear suggestions if query is empty
+                if (!query) {
+                    suggestionsContainer.innerHTML = '';
+                    suggestionsContainer.classList.remove('active');
+                    return;
+                }
+
+                // Debounce search
+                debounceTimeout = setTimeout(async () => {
+                    try {
+                        const movies = await searchMoviesOnTMDB(query);
+                        this.showSuggestions(movies, suggestionsContainer);
+                    } catch (error) {
+                        console.error('Erreur lors de la recherche:', error);
+                    }
+                }, 300);
+            });
+
+            // Fermer les suggestions quand on clique en dehors
+            document.addEventListener('click', (e) => {
+                const target = e.target as HTMLElement;
+                if (!searchInput.contains(target) && !suggestionsContainer.contains(target)) {
+                    suggestionsContainer.classList.remove('active');
+                }
+            });
+        }
+    }
+
+    private showSuggestions(movies: any[], container: HTMLElement) {
+        if (!movies.length) {
+            container.innerHTML = '<div class="watchlist-suggestion">Aucun résultat trouvé</div>';
+            container.classList.add('active');
+            return;
+        }
+
+        const alreadyInWatchlist = new Set(this.watchlist.map(item => item.id));
+
+        container.innerHTML = movies
+            .slice(0, 5)
+            .map(movie => {
+                const isInWatchlist = alreadyInWatchlist.has(movie.id);
+                return `
+                    <div class="watchlist-suggestion">
+                        <img src="https://image.tmdb.org/t/p/w92${movie.poster_path}" 
+                             alt="${movie.title}"
+                             onerror="this.src='path/to/placeholder.jpg'">
+                        <div class="suggestion-info">
+                            <div class="suggestion-title">${movie.title}</div>
+                            <div class="suggestion-year">${movie.release_date ? new Date(movie.release_date).getFullYear() : 'Année inconnue'}</div>
+                        </div>
+                        ${isInWatchlist 
+                            ? '<button class="add-to-watchlist" disabled>Déjà dans la liste</button>'
+                            : `<button class="add-to-watchlist" data-movie-id="${movie.id}">Ajouter</button>`
+                        }
+                    </div>
+                `;
+            })
+            .join('');
+
+        container.classList.add('active');
+
+        // Ajouter les écouteurs d'événements pour les boutons
+        container.querySelectorAll('.add-to-watchlist:not([disabled])').forEach(button => {
+            button.addEventListener('click', async (e) => {
+                const target = e.target as HTMLElement;
+                const movieId = parseInt(target.dataset.movieId || '0');
+                await this.ajouterFilm(movieId);
+                container.classList.remove('active');
+                (document.getElementById('watchlist-search') as HTMLInputElement).value = '';
             });
         });
     }
