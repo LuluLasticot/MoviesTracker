@@ -9,28 +9,17 @@ export class WatchlistController {
         this.currentUserId = userId;
         this.loadWatchlist();
         this.initializeSearch();
-
-        // Écouter les événements d'authentification
-        document.addEventListener('userLoggedIn', ((e: CustomEvent) => {
-            this.currentUserId = e.detail.userId;
-            this.loadWatchlist();
-        }) as EventListener);
-
-        document.addEventListener('userLoggedOut', () => {
-            this.currentUserId = undefined;
-            this.watchlist = [];
-            this.updateUI();
-        });
+        this.setupEventListeners();
     }
 
     private async loadWatchlist() {
-        try {
-            if (!this.currentUserId) {
-                this.watchlist = [];
-                this.updateUI();
-                return;
-            }
+        if (!this.currentUserId) {
+            this.watchlist = [];
+            this.updateUI();
+            return;
+        }
 
+        try {
             const storedWatchlist = localStorage.getItem(`watchlist_${this.currentUserId}`);
             if (storedWatchlist) {
                 this.watchlist = JSON.parse(storedWatchlist);
@@ -38,6 +27,14 @@ export class WatchlistController {
             }
         } catch (error) {
             console.error("Erreur lors du chargement de la watchlist:", error);
+            this.watchlist = [];
+            this.updateUI();
+        }
+    }
+
+    private saveWatchlist() {
+        if (this.currentUserId) {
+            localStorage.setItem(`watchlist_${this.currentUserId}`, JSON.stringify(this.watchlist));
         }
     }
 
@@ -103,58 +100,9 @@ export class WatchlistController {
         }
     }
 
-    public async marquerCommeVu(movieId: number) {
-        try {
-            const movieToMark = this.watchlist.find(item => item.id === movieId);
-            if (!movieToMark) return;
-
-            // Créer un nouvel événement pour ajouter le film aux films vus
-            const addMovieEvent = new CustomEvent('addMovie', {
-                detail: {
-                    movieId: movieId,
-                    dateVisionnage: new Date().toISOString()
-                }
-            });
-            document.dispatchEvent(addMovieEvent);
-
-            // Supprimer le film de la watchlist
-            this.supprimerFilm(movieId);
-
-            // Afficher un message de confirmation
-            alert('Film marqué comme vu et ajouté à votre liste !');
-        } catch (error) {
-            console.error("Erreur lors du marquage du film comme vu:", error);
-        }
-    }
-
-    private saveWatchlist() {
-        if (this.currentUserId) {
-            localStorage.setItem(`watchlist_${this.currentUserId}`, JSON.stringify(this.watchlist));
-        }
-    }
-
     private updateUI() {
         const watchlistContainer = document.querySelector('.watchlist-grid');
         if (!watchlistContainer) return;
-
-        if (!this.currentUserId) {
-            watchlistContainer.innerHTML = `
-                <div class="watchlist-empty">
-                    <p>Connectez-vous pour gérer votre watchlist</p>
-                </div>
-            `;
-            return;
-        }
-
-        if (this.watchlist.length === 0) {
-            watchlistContainer.innerHTML = `
-                <div class="watchlist-empty">
-                    <p>Votre watchlist est vide</p>
-                    <p>Utilisez la barre de recherche ci-dessus pour ajouter des films</p>
-                </div>
-            `;
-            return;
-        }
 
         // Trier par priorité (haute > moyenne > basse) et date d'ajout
         const sortedWatchlist = [...this.watchlist].sort((a, b) => {
@@ -185,9 +133,6 @@ export class WatchlistController {
                         <button class="edit-notes" data-movie-id="${item.id}">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="mark-as-watched" data-movie-id="${item.id}">
-                            <i class="fas fa-check"></i>
-                        </button>
                         <button class="remove-from-watchlist" data-movie-id="${item.id}">
                             <i class="fas fa-trash"></i>
                         </button>
@@ -196,6 +141,7 @@ export class WatchlistController {
             </div>
         `).join('');
 
+        // Ajouter les écouteurs d'événements
         this.setupEventListeners();
     }
 
@@ -244,15 +190,16 @@ export class WatchlistController {
             });
         });
 
-        // Ajouter l'écouteur pour le bouton "Marquer comme vu"
-        document.querySelectorAll('.mark-as-watched').forEach(button => {
-            button.addEventListener('click', async (e) => {
-                const target = e.target as HTMLElement;
-                const movieId = parseInt(target.closest('button')?.dataset.movieId || '0');
-                if (confirm('Voulez-vous marquer ce film comme vu ?')) {
-                    await this.marquerCommeVu(movieId);
-                }
-            });
+        // Écouter les événements de connexion/déconnexion
+        document.addEventListener('userLoggedIn', ((e: CustomEvent) => {
+            this.currentUserId = e.detail.user.id;
+            this.loadWatchlist();
+        }) as EventListener);
+
+        document.addEventListener('userLoggedOut', () => {
+            this.currentUserId = undefined;
+            this.watchlist = [];
+            this.updateUI();
         });
     }
 

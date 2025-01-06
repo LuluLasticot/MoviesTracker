@@ -121,6 +121,8 @@ function initAuthModals(): void {
       // Charger les films de l'utilisateur
       await chargerFilms(currentUserId);
       await afficherFilms();
+      // Réinitialiser la watchlist avec l'ID du nouvel utilisateur
+      watchlistController = new WatchlistController(currentUserId);
     } else {
       alert("Email ou mot de passe incorrect");
     }
@@ -140,6 +142,8 @@ function initAuthModals(): void {
       updateHeaderUI();
       signupModal.classList.add("hidden");
       alert("Inscription réussie ! Vous êtes maintenant connecté.");
+      // Réinitialiser la watchlist avec l'ID du nouvel utilisateur
+      watchlistController = new WatchlistController(currentUserId);
     }
   });
 
@@ -149,6 +153,8 @@ function initAuthModals(): void {
     currentUserId = undefined;
     updateHeaderUI();
     afficherFilms([]);  // Vider la liste des films
+    // Réinitialiser la watchlist sans ID utilisateur
+    watchlistController = new WatchlistController();
   });
 }
 

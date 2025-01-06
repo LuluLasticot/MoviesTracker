@@ -61,7 +61,36 @@ export function inscrireUtilisateur(pseudo: string, email: string, password: str
  * Vérifie les identifiants de l'utilisateur (email + password)
  * Renvoie l'utilisateur si trouvé, sinon null.
  */
-export function connecterUtilisateur(email: string, password: string): Utilisateur | null {
-  const user = utilisateurs.find(u => u.email === email && u.password === password);
-  return user ?? null;
+export async function connecterUtilisateur(email: string, password: string): Promise<any> {
+  try {
+    const utilisateurs = await getUtilisateurs();
+    const utilisateur = utilisateurs.find(u => u.email === email && u.password === password);
+    
+    if (utilisateur) {
+      // Sauvegarder l'utilisateur dans le localStorage
+      localStorage.setItem('currentUser', JSON.stringify(utilisateur));
+      
+      // Émettre un événement de connexion réussie
+      document.dispatchEvent(new CustomEvent('userLoggedIn', {
+        detail: { user: utilisateur }
+      }));
+      
+      return utilisateur;
+    }
+    return null;
+  } catch (error) {
+    console.error("Erreur lors de la connexion:", error);
+    return null;
+  }
+}
+
+/**
+ * Déconnecte l'utilisateur
+ */
+export function deconnecterUtilisateur() {
+  // Supprimer l'utilisateur du localStorage
+  localStorage.removeItem('currentUser');
+  
+  // Émettre un événement de déconnexion
+  document.dispatchEvent(new CustomEvent('userLoggedOut'));
 }
