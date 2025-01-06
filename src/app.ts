@@ -107,8 +107,8 @@ function initAuthModals(): void {
   });
 
   // 5. Gérer la connexion
-  const loginForm = document.getElementById("login-form");
-  loginForm?.addEventListener("submit", async (e) => {
+  const loginSubmitBtn = document.getElementById("login-submit");
+  loginSubmitBtn?.addEventListener("click", async (e) => {
     e.preventDefault();
     const email = (document.getElementById("login-email") as HTMLInputElement).value;
     const password = (document.getElementById("login-password") as HTMLInputElement).value;
