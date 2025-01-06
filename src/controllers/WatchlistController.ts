@@ -100,6 +100,45 @@ export class WatchlistController {
         }
     }
 
+    public async marquerCommeVu(movieId: number) {
+        try {
+            // Trouver le film dans la watchlist
+            const film = this.watchlist.find(item => item.id === movieId);
+            if (!film) return;
+
+            // Récupérer les détails complets du film depuis TMDB
+            const movieDetails = await getMovieDetails(movieId);
+            
+            // Créer l'objet film pour l'ajout
+            const nouveauFilm = {
+                id: movieId,
+                titre: film.titre,
+                annee: film.annee,
+                duree: movieDetails.runtime || 120,
+                realisateur: film.realisateur,
+                distribution: movieDetails.credits?.cast?.slice(0, 5).map(actor => actor.name).join(', ') || '',
+                synopsis: movieDetails.overview || '',
+                note: 0, // L'utilisateur pourra modifier la note plus tard
+                dateVisionnage: new Date().toISOString().split('T')[0],
+                plateforme: 'Autre',
+                affiche: film.affiche,
+                genres: movieDetails.genres?.map(g => g.name) || []
+            };
+
+            // Ajouter aux films vus
+            await ajouterFilm(nouveauFilm);
+
+            // Supprimer de la watchlist
+            this.supprimerFilm(movieId);
+
+            // Émettre un événement pour mettre à jour les statistiques
+            document.dispatchEvent(new CustomEvent('filmsUpdated'));
+
+        } catch (error) {
+            console.error("Erreur lors du marquage comme vu:", error);
+        }
+    }
+
     private updateUI() {
         const watchlistContainer = document.querySelector('.watchlist-grid');
         if (!watchlistContainer) return;
@@ -130,10 +169,13 @@ export class WatchlistController {
                             <option value="moyenne" ${item.priorite === 'moyenne' ? 'selected' : ''}>Moyenne</option>
                             <option value="basse" ${item.priorite === 'basse' ? 'selected' : ''}>Basse</option>
                         </select>
-                        <button class="edit-notes" data-movie-id="${item.id}">
+                        <button class="edit-notes" data-movie-id="${item.id}" title="Modifier les notes">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="remove-from-watchlist" data-movie-id="${item.id}">
+                        <button class="mark-as-watched" data-movie-id="${item.id}" title="Marquer comme vu">
+                            <i class="fas fa-check"></i>
+                        </button>
+                        <button class="remove-from-watchlist" data-movie-id="${item.id}" title="Retirer de la watchlist">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -175,6 +217,17 @@ export class WatchlistController {
                     if (notes !== null) {
                         this.modifierNotes(movieId, notes);
                     }
+                }
+            });
+        });
+
+        // Gérer le marquage comme vu
+        document.querySelectorAll('.mark-as-watched').forEach(button => {
+            button.addEventListener('click', async (e) => {
+                const target = e.target as HTMLElement;
+                const movieId = parseInt(target.closest('button')?.dataset.movieId || '0');
+                if (confirm('Voulez-vous marquer ce film comme vu ? Il sera ajouté à votre liste de films vus.')) {
+                    await this.marquerCommeVu(movieId);
                 }
             });
         });
