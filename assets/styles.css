@@ -1208,3 +1208,40 @@ textarea {
 .watchlist-suggestion .add-to-watchlist:hover {
     background-color: var(--accent-color-hover);
 }
+
+/* Watchlist Empty State */
+.watchlist-empty {
+    text-align: center;
+    padding: 2rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    margin: 2rem auto;
+    max-width: 600px;
+}
+
+.watchlist-empty p {
+    margin: 0.5rem 0;
+    color: #888;
+}
+
+.watchlist-empty p:first-child {
+    font-size: 1.2rem;
+    color: white;
+}
+
+/* Watchlist Action Buttons */
+.mark-as-watched {
+    color: #00C851 !important;
+}
+
+.mark-as-watched:hover {
+    background: rgba(0, 200, 81, 0.2) !important;
+}
+
+.edit-notes:hover {
+    background: rgba(255, 187, 51, 0.2) !important;
+}
+
+.remove-from-watchlist:hover {
+    background: rgba(255, 68, 68, 0.2) !important;
+}
