@@ -1,5 +1,6 @@
 import { WatchlistItem } from "../models/WatchlistItem";
 import { getMovieDetails, searchMoviesOnTMDB } from "../api/tmdb";
+import { ajouterFilm } from "./FilmController";
 
 export class WatchlistController {
     private watchlist: WatchlistItem[] = [];
