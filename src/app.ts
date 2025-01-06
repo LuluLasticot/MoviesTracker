@@ -107,15 +107,15 @@ function initAuthModals(): void {
   });
 
   // 5. Gérer la connexion
-  const loginSubmitBtn = document.getElementById("login-submit");
-  loginSubmitBtn?.addEventListener("click", async (e) => {
+  const loginForm = document.getElementById("login-form");
+  loginForm?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const email = (document.getElementById("login-email") as HTMLInputElement).value;
     const password = (document.getElementById("login-password") as HTMLInputElement).value;
 
-    const user = connecterUtilisateur(email, password);
-    if (user) {
-      currentUserId = user.id;
+    const utilisateur = await connecterUtilisateur(email, password);
+    if (utilisateur) {
+      currentUserId = utilisateur.id;
       updateHeaderUI();
       loginModal.classList.add("hidden");
       // Charger les films de l'utilisateur
