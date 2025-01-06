@@ -1,195 +1,194 @@
 // src/app.ts
 
-import { chargerFilms, afficherFilms } from "./controllers/FilmController";
+import { chargerFilms, afficherFilms, ajouterFilm, supprimerFilmUtilisateur, modifierFilmUtilisateur, initializeFilters } from "./controllers/FilmController";
 import { Film } from "./models/Film";
-import { searchMoviesOnTMDB } from "./api/tmdb"; // AJOUT AUTO-COMPLETE
+import { searchMoviesOnTMDB, getMovieDetails } from "./api/tmdb";
 import Choices from "choices.js";
 import "choices.js/public/assets/styles/choices.min.css";
-import { chargerUtilisateurs, connecterUtilisateur, inscrireUtilisateur } from "./controllers/UtilisateurController";
+import { chargerUtilisateurs, connecterUtilisateur, inscrireUtilisateur, getUtilisateurs } from "./controllers/UtilisateurController";
+import { DashboardController } from "./controllers/DashboardController";
+import { WatchlistController } from "./controllers/WatchlistController";
 
 // On va stocker nos films dans un tableau global (en mémoire)
 let films: Film[] = [];
+// Variable globale pour l'instance de Choices
 let genreChoices: Choices | null = null;
-let filmEnCoursDeModification: number | null = null; // servira plus tard pour "modifier un film"
+let filmEnCoursDeModification: number | null = null;
+// Variable globale pour stocker l'utilisateur connecté
+let currentUserId: number | undefined = undefined;
+
+// Pour le dashboard
+let dashboardController: DashboardController;
+let watchlistController: WatchlistController;
 
 // Pour l'autocomplete
 let suggestionBox: HTMLUListElement | null = null;
 
+// Types pour Choices.js
+interface EventChoice {
+  value: string;
+  label: string;
+  selected: boolean;
+  disabled: boolean;
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
   
   try {
-    
     await chargerUtilisateurs();
     
-    // 1. Charger et afficher les films
-    films = await chargerFilms();
+    // Vérifier si un utilisateur est déjà connecté (stocké dans localStorage)
+    const storedUser = localStorage.getItem('currentUser');
+    if (storedUser) {
+      currentUserId = JSON.parse(storedUser).id;
+      // Charger les films de l'utilisateur
+      films = await chargerFilms(currentUserId);
+      // Initialiser la watchlist avec l'ID de l'utilisateur
+      watchlistController = new WatchlistController(currentUserId);
+    } else {
+      // Charger les films par défaut
+      films = await chargerFilms();
+      // Initialiser la watchlist sans ID utilisateur
+      watchlistController = new WatchlistController();
+    }
+
+    // Initialiser le contrôleur du dashboard après le chargement des films
+    dashboardController = new DashboardController();
+    // Déclencher la mise à jour initiale des statistiques
+    document.dispatchEvent(new CustomEvent('filmsUpdated', { detail: { films } }));
+    
+    // Initialiser les autres composants
+    initAuthModals();
+    initFilmsStuff();
+    await initAutocomplete();
+    
+    // Afficher les films
     afficherFilms(films);
-
-    // 2. Mettre à jour le compteur
     updateMovieCount();
-
     updateHeaderUI();
 
-    initAuthModals();
-
-    initFilmsStuff();
-
-    // 3. Initialiser Choices.js pour le sélecteur "genres"
-    const genreSelect = document.getElementById("genres") as HTMLSelectElement;
-    if (genreSelect) {
-      genreChoices = new Choices(genreSelect, {
-        removeItemButton: true,
-        placeholder: true,
-        placeholderValue: "Sélectionnez un ou plusieurs genres",
-      });
-    }
-
-    // 4. Gérer le bouton "Ajouter un film"
-    const addButton = document.getElementById("ajouter-film-btn");
-    if (addButton) {
-      addButton.addEventListener("click", (event) => {
-        event.preventDefault();
-        ajouterNouveauFilm();
-      });
-    }
-
-    const sortSelect = document.querySelector(".sort-select") as HTMLSelectElement;
-    if (sortSelect) {
-        sortSelect.addEventListener("change", () => {
-        trierFilms(sortSelect.value);
-        });
-    }
-
-    // 5. Initialiser l'autocomplete sur le champ "film-title"
-    initAutocomplete(); // AJOUT AUTO-COMPLETE
+    // Initialiser les filtres
+    initializeFilters();
 
   } catch (error) {
     console.error("Erreur lors du chargement initial :", error);
   }
 });
 
-function initAuthModals() {
-  // Boutons du header
+function initAuthModals(): void {
+  // 1. Sélectionner les boutons "Login" & "Signup" du header
   const loginBtn = document.querySelector(".login-btn") as HTMLButtonElement;
   const signupBtn = document.querySelector(".signup-btn") as HTMLButtonElement;
 
-  // Modals
+  // 2. Sélectionner les modals
   const loginModal = document.getElementById("login-modal") as HTMLDivElement;
   const signupModal = document.getElementById("signup-modal") as HTMLDivElement;
 
-  if (loginBtn) {
-    loginBtn.addEventListener("click", () => {
-      loginModal.classList.remove("hidden");
-    });
-  }
-  if (signupBtn) {
-    signupBtn.addEventListener("click", () => {
-      signupModal.classList.remove("hidden");
-    });
-  }
+  // 3. Ajouter les event listeners sur les boutons d'ouverture des modales
+  loginBtn?.addEventListener("click", () => {
+    loginModal.classList.remove("hidden");
+    signupModal.classList.add("hidden");
+  });
 
-  // Boutons "Annuler" dans chaque modal
-  const loginCancel = document.getElementById("login-cancel") as HTMLButtonElement;
-  if (loginCancel) {
-    loginCancel.addEventListener("click", () => {
+  signupBtn?.addEventListener("click", () => {
+    signupModal.classList.remove("hidden");
+    loginModal.classList.add("hidden");
+  });
+
+  // 4. Gérer les boutons "Annuler"
+  const loginCancelBtn = document.getElementById("login-cancel");
+  loginCancelBtn?.addEventListener("click", () => {
+    loginModal.classList.add("hidden");
+  });
+
+  const signupCancelBtn = document.getElementById("signup-cancel");
+  signupCancelBtn?.addEventListener("click", () => {
+    signupModal.classList.add("hidden");
+  });
+
+  // 5. Gérer la connexion
+  const loginSubmitBtn = document.getElementById("login-submit");
+  loginSubmitBtn?.addEventListener("click", async (e) => {
+    e.preventDefault();
+    const email = (document.getElementById("login-email") as HTMLInputElement).value;
+    const password = (document.getElementById("login-password") as HTMLInputElement).value;
+
+    const user = connecterUtilisateur(email, password);
+    if (user) {
+      currentUserId = user.id;
+      updateHeaderUI();
       loginModal.classList.add("hidden");
-    });
-  }
-  const signupCancel = document.getElementById("signup-cancel") as HTMLButtonElement;
-  if (signupCancel) {
-    signupCancel.addEventListener("click", () => {
+      // Charger les films de l'utilisateur
+      await chargerFilms(currentUserId);
+      await afficherFilms();
+    } else {
+      alert("Email ou mot de passe incorrect");
+    }
+  });
+
+  // 6. Gérer l'inscription
+  const signupSubmitBtn = document.getElementById("signup-submit");
+  signupSubmitBtn?.addEventListener("click", (e) => {
+    e.preventDefault();
+    const pseudo = (document.getElementById("signup-pseudo") as HTMLInputElement).value;
+    const email = (document.getElementById("signup-email") as HTMLInputElement).value;
+    const password = (document.getElementById("signup-password") as HTMLInputElement).value;
+
+    const newUser = inscrireUtilisateur(pseudo, email, password);
+    if (newUser) {
+      currentUserId = newUser.id;
+      updateHeaderUI();
       signupModal.classList.add("hidden");
-    });
-  }
+      alert("Inscription réussie ! Vous êtes maintenant connecté.");
+    }
+  });
 
-  // Bouton "Se connecter"
-  const loginSubmit = document.getElementById("login-submit") as HTMLButtonElement;
-  if (loginSubmit) {
-    loginSubmit.addEventListener("click", () => {
-      const emailInput = document.getElementById("login-email") as HTMLInputElement;
-      const passInput = document.getElementById("login-password") as HTMLInputElement;
-
-      const email = emailInput.value.trim();
-      const password = passInput.value.trim();
-
-      const user = connecterUtilisateur(email, password);
-      if (user) {
-        // OK
-        localStorage.setItem("connectedUserId", user.id.toString());
-        localStorage.setItem("connectedUserPseudo", user.pseudo);
-
-        loginModal.classList.add("hidden");
-        updateHeaderUI();
-      } else {
-        alert("Identifiants invalides ou compte introuvable.");
-      }
-    });
-  }
-
-  // Bouton "S'inscrire"
-  const signupSubmit = document.getElementById("signup-submit") as HTMLButtonElement;
-  if (signupSubmit) {
-    signupSubmit.addEventListener("click", () => {
-      const pseudoInput = document.getElementById("signup-pseudo") as HTMLInputElement;
-      const emailInput = document.getElementById("signup-email") as HTMLInputElement;
-      const passInput = document.getElementById("signup-password") as HTMLInputElement;
-
-      const pseudo = pseudoInput.value.trim();
-      const email = emailInput.value.trim();
-      const password = passInput.value.trim();
-
-      if (!pseudo || !email || !password) {
-        alert("Veuillez remplir tous les champs.");
-        return;
-      }
-
-      const newUser = inscrireUtilisateur(pseudo, email, password);
-      if (newUser) {
-        alert("Inscription réussie ! Vous pouvez vous connecter maintenant.");
-        signupModal.classList.add("hidden");
-      }
-    });
-  }
+  // 7. Gérer la déconnexion
+  const logoutBtn = document.getElementById("logout-btn");
+  logoutBtn?.addEventListener("click", () => {
+    currentUserId = undefined;
+    updateHeaderUI();
+    afficherFilms([]);  // Vider la liste des films
+  });
 }
 
 /* ==================== FONCTION : updateHeaderUI ==================== */
-function updateHeaderUI() {
-  const connectedUserId = localStorage.getItem("connectedUserId");
-  const connectedUserPseudo = localStorage.getItem("connectedUserPseudo");
-
-  const loginBtn = document.querySelector(".login-btn") as HTMLButtonElement;
-  const signupBtn = document.querySelector(".signup-btn") as HTMLButtonElement;
+function updateHeaderUI(): void {
+  const authButtons = document.querySelector(".auth-buttons") as HTMLDivElement;
   const avatarContainer = document.getElementById("avatar-container") as HTMLDivElement;
   const avatarPseudo = document.getElementById("avatar-pseudo") as HTMLSpanElement;
-  const logoutBtn = document.getElementById("logout-btn") as HTMLButtonElement;
 
-  if (connectedUserId) {
-    // On est loggué
-    if (loginBtn) loginBtn.style.display = "none";
-    if (signupBtn) signupBtn.style.display = "none";
-    if (avatarContainer) avatarContainer.style.display = "flex";
-    if (avatarPseudo) avatarPseudo.textContent = connectedUserPseudo || "User";
-
-    if (logoutBtn) {
-      logoutBtn.addEventListener("click", () => {
-        localStorage.removeItem("connectedUserId");
-        localStorage.removeItem("connectedUserPseudo");
-        updateHeaderUI();
-      });
+  if (currentUserId) {
+    // L'utilisateur est connecté
+    const user = getUtilisateurs().find(u => u.id === currentUserId);
+    if (user) {
+      // Cacher les boutons d'auth et montrer le container avatar
+      authButtons.style.display = "none";
+      avatarContainer.style.display = "flex";
+      avatarPseudo.textContent = user.pseudo;
     }
   } else {
-    // Pas connecté
-    if (loginBtn) loginBtn.style.display = "inline-block";
-    if (signupBtn) signupBtn.style.display = "inline-block";
-    if (avatarContainer) avatarContainer.style.display = "none";
+    // L'utilisateur est déconnecté
+    authButtons.style.display = "flex";
+    avatarContainer.style.display = "none";
+    avatarPseudo.textContent = "";
   }
 }
 
 /* ==================== Reste du code (films, etc.) ==================== */
-function initFilmsStuff() {
-  // Ex. initialiser Choices.js
+function initFilmsStuff(): void {
+  // Initialiser Choices.js une seule fois
   const genreSelect = document.getElementById("genres") as HTMLSelectElement;
   if (genreSelect) {
+    // Détruire l'instance existante si elle existe
+    if (genreChoices) {
+      try {
+        genreChoices.destroy();
+      } catch (error) {
+        console.error("Erreur lors de la destruction de Choices:", error);
+      }
+    }
+    
     genreChoices = new Choices(genreSelect, {
       removeItemButton: true,
       placeholder: true,
@@ -197,45 +196,149 @@ function initFilmsStuff() {
     });
   }
 
-  // auto-complétion, etc.
-  // ...
+  // Gérer le bouton "Ajouter un film"
+  const addButton = document.getElementById("ajouter-film-btn");
+  if (addButton) {
+    addButton.addEventListener("click", async (event) => {
+      event.preventDefault();
+      await ajouterNouveauFilm();
+    });
+  }
+
+  // Gérer le tri des films
+  const sortSelect = document.querySelector(".sort-select") as HTMLSelectElement;
+  if (sortSelect) {
+    sortSelect.addEventListener("change", () => {
+      trierFilms(sortSelect.value);
+    });
+  }
+
+  // Initialiser l'autocomplete
+  initAutocomplete();
+}
+
+function clearSuggestions(): void {
+  if (suggestionBox) {
+    suggestionBox.innerHTML = '';
+    suggestionBox.style.display = 'none';  // Cacher la boîte de suggestions
+  }
+}
+
+async function initAutocomplete(): Promise<void> {
+  const inputEl = document.getElementById("film-title") as HTMLInputElement;
+  
+  if (!inputEl) return;
+
+  // Créer la boîte de suggestions si elle n'existe pas
+  if (!suggestionBox) {
+    suggestionBox = document.createElement('ul');
+    suggestionBox.className = 'autocomplete-list';
+    const formGroup = inputEl.closest('.form-group') as HTMLElement;
+    if (formGroup) {
+      formGroup.style.position = 'relative';
+      formGroup.appendChild(suggestionBox);
+    }
+  }
+
+  let debounceTimeout: NodeJS.Timeout;
+
+  inputEl.addEventListener("input", async () => {
+    clearTimeout(debounceTimeout);
+    const searchTerm = inputEl.value.trim();
+
+    if (searchTerm.length < 2) {
+      clearSuggestions();
+      return;
+    }
+
+    debounceTimeout = setTimeout(async () => {
+      try {
+        const movies = await searchMoviesOnTMDB(searchTerm);
+        
+        if (!movies || movies.length === 0) {
+          clearSuggestions();
+          return;
+        }
+
+        // Afficher les suggestions
+        suggestionBox!.innerHTML = '';
+        suggestionBox!.style.display = 'block';
+
+        movies.forEach(movie => {
+          const li = document.createElement('li');
+          li.tabIndex = 0;
+          const year = movie.release_date ? ` (${movie.release_date.split('-')[0]})` : '';
+          li.textContent = `${movie.title}${year}`;
+          
+          li.addEventListener('click', async () => {
+            inputEl.value = movie.title;
+            await fillFormWithTMDB(movie.id);
+            clearSuggestions();
+          });
+
+          li.addEventListener('keydown', async (event) => {
+            if (event.key === 'Enter') {
+              inputEl.value = movie.title;
+              await fillFormWithTMDB(movie.id);
+              clearSuggestions();
+            }
+          });
+          
+          suggestionBox!.appendChild(li);
+        });
+      } catch (error) {
+        console.error('Erreur lors de la recherche de films:', error);
+        clearSuggestions();
+      }
+    }, 300);
+  });
+
+  // Fermer les suggestions si on clique en dehors
+  document.addEventListener('click', (event) => {
+    const target = event.target as HTMLElement;
+    if (target !== inputEl && !suggestionBox?.contains(target)) {
+      clearSuggestions();
+    }
+  });
+
+  // Gérer la navigation au clavier
+  inputEl.addEventListener('keydown', (event) => {
+    if (!suggestionBox || suggestionBox.style.display === 'none') return;
+
+    const suggestions = Array.from(suggestionBox.querySelectorAll('li'));
+    const currentFocus = document.activeElement;
+    const currentIndex = suggestions.findIndex(el => el === currentFocus);
+
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        if (currentIndex < suggestions.length - 1) {
+          (suggestions[currentIndex + 1] as HTMLElement).focus();
+        } else {
+          (suggestions[0] as HTMLElement).focus();
+        }
+        break;
+
+      case 'ArrowUp':
+        event.preventDefault();
+        if (currentIndex > 0) {
+          (suggestions[currentIndex - 1] as HTMLElement).focus();
+        } else {
+          (suggestions[suggestions.length - 1] as HTMLElement).focus();
+        }
+        break;
+
+      case 'Escape':
+        clearSuggestions();
+        inputEl.blur();
+        break;
+    }
+  });
 }
 
 /* =========================================================
    AUTO-COMPLETION TMDB
    ========================================================= */
-function initAutocomplete(): void {
-  const titleInput = document.getElementById("film-title") as HTMLInputElement;
-  if (!titleInput) return;
-
-  // Créer un <ul> pour la liste de suggestions
-  suggestionBox = document.createElement("ul");
-  suggestionBox.classList.add("autocomplete-list");
-
-  // Pour que la liste soit positionnée juste sous le champ, 
-  // on place 'position: relative' sur le parent si besoin.
-  // On va insérer la suggestionBox dans le parent du champ
-  const parent = titleInput.parentElement;
-  if (parent) {
-    parent.style.position = "relative"; // s'assure que le <ul> sera bien positionné
-    parent.appendChild(suggestionBox);
-  }
-
-  // Écoute de l'événement "input"
-  titleInput.addEventListener("input", async () => {
-    const query = titleInput.value.trim();
-    if (query.length < 2) {
-      clearSuggestions();
-      return;
-    }
-    try {
-      const results = await searchMoviesOnTMDB(query);
-      showSuggestions(results, titleInput);
-    } catch (error) {
-      console.error("Erreur auto-complétion TMDB :", error);
-    }
-  });
-}
 
 function trierFilms(critere: string) {
     if (critere === "Note") {
@@ -263,352 +366,363 @@ function showSuggestions(movies: any[], inputEl: HTMLInputElement) {
     const year = movie.release_date ? movie.release_date.substring(0, 4) : "????";
     li.textContent = `${movie.title} (${year})`;
 
-    li.addEventListener("click", () => {
+    li.addEventListener("click", async () => {
       // On remplit le champ titre
       inputEl.value = movie.title;
       // On préremplit l'affiche (hidden input)
-      fillFormWithTMDB(movie);
+      await fillFormWithTMDB(movie.id);
       // On efface la liste de suggestions
       clearSuggestions();
     });
 
+    // Ajouter un gestionnaire pour la touche Entrée
+    li.addEventListener('keydown', async (event) => {
+      if (event.key === 'Enter') {
+        inputEl.value = movie.title;
+        await fillFormWithTMDB(movie.id);
+        clearSuggestions();
+      }
+    });
+    
     suggestionBox!.appendChild(li);
   });
-}
-
-function clearSuggestions() {
-  if (suggestionBox) {
-    suggestionBox.innerHTML = "";
-  }
-}
-
-/**
- * Remplit certains champs (affiche, année...) avec les infos du film TMDB
- */
-function fillFormWithTMDB(movie: any) {
-  // 1. Récupérer l'année depuis "release_date"
-  const anneeSelect = document.getElementById("annee") as HTMLSelectElement;
-  if (movie.release_date) {
-    const releaseYear = movie.release_date.substring(0, 4);
-    // On essaie de sélectionner l'année si elle existe dans la liste
-    anneeSelect.value = releaseYear;
-  }
-
-  // 2. Récupérer l'affiche
-  const posterPath = movie.poster_path
-    ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
-    : "https://via.placeholder.com/400x600?text=No+Poster";
-
-  // 3. Stocker ça dans le champ hidden "affiche"
-  const afficheHiddenInput = document.getElementById("affiche") as HTMLInputElement;
-  if (afficheHiddenInput) {
-    afficheHiddenInput.value = posterPath;
-  }
-
-  // 4. (Optionnel) on peut aussi remplir le synopsis, etc.
-  // => movie.overview
-  const synopsisTextarea = document.getElementById("synopsis") as HTMLTextAreaElement;
-  if (synopsisTextarea && movie.overview) {
-    synopsisTextarea.value = movie.overview;
-  }
 }
 
 /* =========================================================
    FONCTION : Ajouter un nouveau film dans la liste
    ========================================================= */
-function ajouterNouveauFilm(): void {
-  try {
-    // Récupérer chaque champ
-    const titleInput = document.getElementById("film-title") as HTMLInputElement;
-    const anneeSelect = document.getElementById("annee") as HTMLSelectElement;
-    const dureeInput = document.getElementById("duree") as HTMLInputElement;
-    const realisationsInput = document.getElementById("realisations") as HTMLInputElement;
-    const distributionInput = document.getElementById("distribution") as HTMLInputElement;
-    const synopsisTextarea = document.getElementById("synopsis") as HTMLTextAreaElement;
-    const noteSelect = document.getElementById("note") as HTMLSelectElement;
-    const dateVisionnageInput = document.getElementById("dateVisionnage") as HTMLInputElement;
-    const plateformeSelect = document.getElementById("plateforme") as HTMLSelectElement;
-    const afficheHiddenInput = document.getElementById("affiche") as HTMLInputElement;
+export async function ajouterNouveauFilm(): Promise<void> {
+  // Récupération des éléments du DOM
+  const titreElement = document.getElementById("film-title") as HTMLInputElement;
+  const dureeElement = document.getElementById("duree") as HTMLInputElement;
+  const realisateurElement = document.getElementById("realisations") as HTMLInputElement;
+  const noteElement = document.getElementById("note") as HTMLSelectElement;
+  const dateElement = document.getElementById("dateVisionnage") as HTMLInputElement;
+  const plateformeElement = document.getElementById("plateforme") as HTMLSelectElement;
+  const anneeElement = document.getElementById("annee") as HTMLSelectElement;
 
-    // Genres via Choices.js
-    let selectedGenres: string[] = [];
-    if (genreChoices) {
-      selectedGenres = genreChoices.getValue(true) as string[];
-    } else {
-      const genreSelect = document.getElementById("genres") as HTMLSelectElement;
-      if (genreSelect) {
-        selectedGenres = Array.from(genreSelect.selectedOptions).map(opt => opt.value);
+  // Récupération des valeurs avec trim() et vérification stricte
+  const titre = titreElement?.value?.trim();
+  const annee = anneeElement?.value;
+  const genresValue = genreChoices?.getValue();
+  const genres = Array.isArray(genresValue) 
+    ? genresValue.map(choice => choice.value)
+    : genresValue 
+      ? [genresValue.value] 
+      : [];
+  const duree = dureeElement?.value?.trim();
+  const realisateur = realisateurElement?.value?.trim();
+  const acteurs = (document.getElementById("distribution") as HTMLInputElement).value.split(",").map((a) => a.trim()).filter(a => a);
+  const synopsis = (document.getElementById("synopsis") as HTMLTextAreaElement).value.trim();
+  const note = noteElement?.value;
+  const dateDeVisionnage = dateElement?.value;
+  const plateforme = plateformeElement?.value;
+  const affiche = (document.getElementById("affiche") as HTMLInputElement).value.trim() || "https://via.placeholder.com/400x600?text=No+Poster";
+
+  // Validation des champs obligatoires
+  const champsObligatoires = [
+    { valeur: titre, nom: "Titre", element: titreElement },
+    { valeur: annee, nom: "Année", element: anneeElement },
+    { valeur: duree, nom: "Durée", element: dureeElement },
+    { valeur: realisateur, nom: "Réalisateur", element: realisateurElement },
+    { valeur: note, nom: "Note", element: noteElement },
+    { valeur: dateDeVisionnage, nom: "Date de visionnage", element: dateElement },
+    { valeur: plateforme, nom: "Plateforme", element: plateformeElement }
+  ];
+
+  const champsManquants = champsObligatoires
+    .filter(champ => {
+      const manquant = !champ.valeur;
+      if (manquant) {
+        console.log(`Champ manquant - ${champ.nom}:`, {
+          valeur: champ.valeur,
+          elementId: champ.element?.id,
+          elementValue: champ.element?.value
+        });
       }
-    }
+      return manquant;
+    })
+    .map(champ => champ.nom);
 
-    // Parser réalisations et distribution
-    const realisations = realisationsInput.value
-      .split(",")
-      .map(r => r.trim())
-      .filter(r => r.length > 0);
-
-    const distributions = distributionInput.value
-      .split(",")
-      .map(d => d.trim())
-      .filter(d => d.length > 0);
-
-    // Construire ou incrémenter un nouvel ID
-    const maxId = films.length > 0 ? Math.max(...films.map(f => f.id)) : 0;
-    const newId = maxId + 1;
-
-    // Soit on est en mode "édition", soit en mode "création"
-    if (filmEnCoursDeModification != null) {
-      // MODE ÉDITION
-      const film = films.find(f => f.id === filmEnCoursDeModification);
-      if (!film) {
-        console.error("Film introuvable pour la modification");
-        return;
-      }
-    
-      // On met à jour les champs
-      film.titre = titleInput.value || "Titre inconnu";
-      film.annee = parseInt(anneeSelect.value, 10) || 1900;
-      film.genres = selectedGenres;
-      film.duree = parseInt(dureeInput.value, 10) || 120;
-      film.realisateur = realisations.join(", ");
-      film.acteurs = distributions;
-      film.synopsis = synopsisTextarea.value || "";
-      film.note = parseFloat(noteSelect.value) || 0;
-      film.dateDeVisionnage = dateVisionnageInput.value || "";
-      film.plateforme = plateformeSelect.value || "Autre";
-      film.affiche = afficheHiddenInput.value || "https://via.placeholder.com/400x600?text=No+Poster";
-    
-      // On sort du mode édition
-      filmEnCoursDeModification = null;
-    
-      // On remet le bouton à "Ajouter un film"
-      const addButton = document.getElementById("ajouter-film-btn") as HTMLButtonElement;
-      addButton.textContent = "Ajouter un film";
-    
-      // On réaffiche
-      afficherFilms(films);
-      updateMovieCount();
-      resetForm();
-      return;
-    }
-    
-
-    // Sinon, on crée un nouveau Film
-    const newFilm = new Film(
-      newId,
-      titleInput.value || "Titre inconnu",
-      parseInt(anneeSelect.value, 10) || 1900,
-      selectedGenres,
-      parseInt(dureeInput.value, 10) || 120,
-      realisations.join(", "),
-      distributions,
-      synopsisTextarea.value || "",
-      parseFloat(noteSelect.value) || 0,
-      dateVisionnageInput.value || "",
-      plateformeSelect.value || "Autre",
-      afficheHiddenInput?.value || "https://via.placeholder.com/400x600?text=No+Poster"
-    );
-
-    films.push(newFilm);
-    afficherFilms(films);
-    updateMovieCount();
-    resetForm();
-  } catch (error) {
-    console.error("Erreur lors de l'ajout d'un nouveau film :", error);
+  if (champsManquants.length > 0) {
+    alert(`Veuillez remplir les champs obligatoires suivants : ${champsManquants.join(", ")}`);
+    return;
   }
+
+  if (!currentUserId) {
+    alert("Vous devez être connecté pour ajouter ou modifier un film.");
+    return;
+  }
+
+  // Si on est en mode modification
+  if (filmEnCoursDeModification !== null) {
+    // Mettre à jour uniquement les champs personnels
+    const filmIndex = films.findIndex(f => f.id === filmEnCoursDeModification);
+    if (filmIndex !== -1) {
+      films[filmIndex] = {
+        ...films[filmIndex],
+        note: parseFloat(note!),
+        dateDeVisionnage: dateDeVisionnage!,
+        plateforme: plateforme!
+      };
+
+      // Sauvegarder les modifications
+      modifierFilmUtilisateur(currentUserId, films[filmIndex]);
+
+      // Réinitialiser le mode modification
+      filmEnCoursDeModification = null;
+      const addButton = document.getElementById('ajouter-film-btn') as HTMLButtonElement;
+      if (addButton) {
+        addButton.textContent = 'Ajouter le film';
+      }
+    }
+  } else {
+    // Mode ajout d'un nouveau film
+    const maxId = films.length > 0 
+      ? Math.max(...films.map(f => f.id)) 
+      : 0;
+
+    const nouveauFilm: Film = {
+      id: maxId + 1,
+      titre: titre!,
+      annee: parseInt(annee!),
+      genres,
+      duree: parseInt(duree!),
+      realisateur: realisateur!,
+      acteurs,
+      synopsis,
+      note: parseFloat(note!),
+      dateDeVisionnage: dateDeVisionnage!,
+      plateforme: plateforme!,
+      affiche
+    };
+
+    // Ajouter le film
+    ajouterFilm(currentUserId, nouveauFilm);
+  }
+
+  // Réinitialiser le formulaire et rafraîchir l'affichage
+  resetForm();
+  await afficherFilms();
+}
+
+export function modifierFilm(filmId: number): void {
+  if (!currentUserId) return;
+
+  // Récupérer le film à modifier
+  const film = films.find(f => f.id === filmId);
+  if (!film) return;
+
+  // Sauvegarder l'ID du film en cours de modification
+  filmEnCoursDeModification = filmId;
+
+  // Remplir le formulaire avec les données du film
+  const form = document.querySelector('.movie-form') as HTMLElement;
+  if (form) {
+    // Remplir les champs personnels
+    (document.getElementById('note') as HTMLSelectElement).value = film.note.toString();
+    (document.getElementById('dateVisionnage') as HTMLInputElement).value = film.dateDeVisionnage;
+    (document.getElementById('plateforme') as HTMLSelectElement).value = film.plateforme;
+
+    // Faire défiler jusqu'au formulaire
+    form.scrollIntoView({ behavior: 'smooth' });
+
+    // Changer le texte du bouton d'ajout
+    const addButton = document.getElementById('ajouter-film-btn') as HTMLButtonElement;
+    if (addButton) {
+      addButton.textContent = 'Enregistrer les modifications';
+    }
+  }
+}
+
+function resetForm(): void {
+  // Réinitialiser chaque champ individuellement
+  (document.getElementById("film-title") as HTMLInputElement).value = "";
+  (document.getElementById("annee") as HTMLSelectElement).value = "2024";
+  if (genreChoices) {
+    genreChoices.removeActiveItems();
+    genreChoices.setChoiceByValue([]);
+  }
+  (document.getElementById("duree") as HTMLInputElement).value = "";
+  (document.getElementById("realisations") as HTMLInputElement).value = "";
+  (document.getElementById("distribution") as HTMLInputElement).value = "";
+  (document.getElementById("synopsis") as HTMLTextAreaElement).value = "";
+  (document.getElementById("note") as HTMLSelectElement).value = "5";
+  (document.getElementById("dateVisionnage") as HTMLInputElement).value = new Date().toISOString().split("T")[0];
+  (document.getElementById("plateforme") as HTMLSelectElement).value = "Netflix";
+  (document.getElementById("affiche") as HTMLInputElement).value = "";
+
+  // Réinitialiser le mode modification
+  filmEnCoursDeModification = null;
+  const addButton = document.getElementById('ajouter-film-btn') as HTMLButtonElement;
+  if (addButton) {
+    addButton.textContent = 'Ajouter le film';
+  }
+}
+
+/* =========================================================
+   FONCTION : Supprimer un film
+   ========================================================= */
+export function supprimerFilm(id: number): void {
+  if (!currentUserId) {
+    alert("Vous devez être connecté pour supprimer un film.");
+    return;
+  }
+
+  // Demander confirmation avant de supprimer
+  if (!confirm("Êtes-vous sûr de vouloir supprimer ce film ?")) {
+    return;
+  }
+
+  // Supprimer le film via le contrôleur
+  supprimerFilmUtilisateur(currentUserId, id);
+  
+  // Rafraîchir l'affichage
+  chargerFilms(currentUserId).then(filmsActualises => {
+    afficherFilms(filmsActualises);
+    updateMovieCount();
+  });
 }
 
 /* =========================================================
    FONCTION : Mise à jour du compteur
    ========================================================= */
-function updateMovieCount(): void {
+export function updateMovieCount(): void {
   const movieCountElement = document.querySelector(".movie-count span");
-  if (movieCountElement) {
+  if (!movieCountElement) return;
+
+  if (currentUserId) {
+    // Si un utilisateur est connecté, obtenir le nombre de ses films depuis le localStorage
+    const userFilms = localStorage.getItem(`films_${currentUserId}`);
+    const count = userFilms ? JSON.parse(userFilms).length : 0;
+    movieCountElement.textContent = String(count).padStart(2, "0");
+  } else {
+    // Si aucun utilisateur n'est connecté, utiliser le nombre de films par défaut
     movieCountElement.textContent = String(films.length).padStart(2, "0");
   }
 }
 
-/* =========================================================
-   FONCTION : Réinitialiser le formulaire
-   ========================================================= */
-function resetForm(): void {
-  const titleInput = document.getElementById("film-title") as HTMLInputElement;
-  titleInput.value = "";
+// app.ts ou un code JS
+const navLinks = document.querySelectorAll(".nav-links a");
+navLinks.forEach(link => {
+  link.addEventListener("click", (e) => {
+    e.preventDefault(); // on empêche la navigation
+    const text = link.textContent?.trim();
+    if (text === "Dashboard") {
+      showDashboardSection();
+    } else if (text === "Home") {
+      showHomeSection();
+    } else if (text === "Watchlist") {
+      showWatchlistSection();
+    }
+    // etc. pour Watchlist, Profile...
+    handleNavUnderline(link); // pour gérer l'underline rouge
+  });
+});
 
-  if (genreChoices) {
-    genreChoices.clearStore();
-    genreChoices.setChoiceByValue([]);
-  } else {
+function showDashboardSection() {
+  // 1. Masquer la hero section, la movies-list, etc.
+  const hero = document.querySelector(".hero") as HTMLElement;
+  const movieForm = document.querySelector(".movie-form") as HTMLElement;
+  const moviesList = document.querySelector(".movies-list") as HTMLElement;
+  hero.style.display = "none";
+  movieForm.style.display = "none";
+  moviesList.style.display = "none";
+
+  // 2. Afficher la dashboard-section
+  const dashboardSection = document.querySelector(".dashboard-section") as HTMLElement;
+  dashboardSection.style.display = "block";
+
+  // (Eventuellement, calculer de vraies stats et mettre à jour les nombres)
+}
+
+function showHomeSection() {
+  // 1. Ré-afficher hero, movie-form, movies-list
+  const hero = document.querySelector(".hero") as HTMLElement;
+  hero.style.display = "block";
+  const movieForm = document.querySelector(".movie-form") as HTMLElement;
+  movieForm.style.display = "block";
+  const moviesList = document.querySelector(".movies-list") as HTMLElement;
+  moviesList.style.display = "block";
+
+  // 2. Cacher la dashboard-section
+  const dashboardSection = document.querySelector(".dashboard-section") as HTMLElement;
+  dashboardSection.style.display = "none";
+}
+
+function showWatchlistSection() {
+  document.querySelector('.hero')?.classList.add('hidden');
+  document.querySelector('.movie-form')?.classList.add('hidden');
+  document.querySelector('.movies-list')?.classList.add('hidden');
+  document.querySelector('.dashboard-section')?.classList.add('hidden');
+  document.querySelector('.watchlist-section')?.classList.remove('hidden');
+}
+
+function handleNavUnderline(clickedLink: Element): void {
+  if (!(clickedLink instanceof HTMLAnchorElement)) return;
+  
+  const navLinks = document.querySelectorAll(".nav-links a");
+  navLinks.forEach((link) => link.classList.remove("active"));
+  clickedLink.classList.add("active");
+}
+
+/**
+ * Remplit certains champs (affiche, année...) avec les infos du film TMDB
+ */
+async function fillFormWithTMDB(movieId: number): Promise<void> {
+  const movieDetails = await getMovieDetails(movieId);
+  if (!movieDetails) return;
+
+  // Remplir les champs du formulaire avec les données TMDB
+  (document.getElementById("film-title") as HTMLInputElement).value = movieDetails.title;
+  (document.getElementById("annee") as HTMLSelectElement).value = new Date(movieDetails.release_date).getFullYear().toString();
+  (document.getElementById("duree") as HTMLInputElement).value = movieDetails.runtime?.toString() || "";
+  (document.getElementById("realisations") as HTMLInputElement).value = movieDetails.credits?.crew
+    .filter(member => member.job === "Director")
+    .map(director => director.name)
+    .join(", ") || "";
+  (document.getElementById("distribution") as HTMLInputElement).value = movieDetails.credits?.cast
+    .slice(0, 5)
+    .map(actor => actor.name)
+    .join(", ") || "";
+  (document.getElementById("synopsis") as HTMLTextAreaElement).value = movieDetails.overview || "";
+  (document.getElementById("affiche") as HTMLInputElement).value = movieDetails.poster_path
+    ? `https://image.tmdb.org/t/p/w500${movieDetails.poster_path}`
+    : "";
+
+  // Gestion des genres
+  if (genreChoices && movieDetails.genres) {
     const genreSelect = document.getElementById("genres") as HTMLSelectElement;
-    if (genreSelect) {
-      Array.from(genreSelect.selectedOptions).forEach(opt => opt.selected = false);
-    }
-  }
-
-  const anneeSelect = document.getElementById("annee") as HTMLSelectElement;
-  anneeSelect.value = "2025";
-
-  const dureeInput = document.getElementById("duree") as HTMLInputElement;
-  dureeInput.value = "120";
-
-  const realisationsInput = document.getElementById("realisations") as HTMLInputElement;
-  realisationsInput.value = "";
-
-  const distributionInput = document.getElementById("distribution") as HTMLInputElement;
-  distributionInput.value = "";
-
-  const synopsisTextarea = document.getElementById("synopsis") as HTMLTextAreaElement;
-  synopsisTextarea.value = "";
-
-  const noteSelect = document.getElementById("note") as HTMLSelectElement;
-  noteSelect.value = "0";
-
-  const dateVisionnageInput = document.getElementById("dateVisionnage") as HTMLInputElement;
-  dateVisionnageInput.value = "";
-
-  const plateformeSelect = document.getElementById("plateforme") as HTMLSelectElement;
-  plateformeSelect.value = "Netflix";
-
-  const afficheHiddenInput = document.getElementById("affiche") as HTMLInputElement;
-  if (afficheHiddenInput) {
-    afficheHiddenInput.value = "";
-  }
-}
-
-// app.ts (à la suite de ton code)
-export function supprimerFilm(id: number) {
-    // On filtre le tableau global "films"
-    films = films.filter((film) => film.id !== id);
+    const availableGenres = Array.from(genreSelect.options).map(opt => opt.value);
     
-    // On réaffiche
-    afficherFilms(films);
-    updateMovieCount();
+    // Mapper les genres TMDB vers nos genres locaux
+    const genreMapping: { [key: string]: string } = {
+      "Action": "Action",
+      "Adventure": "Aventure",
+      "Animation": "Animation",
+      "Comedy": "Comédie",
+      "Crime": "Policier",
+      "Documentary": "Documentaire",
+      "Drama": "Drame",
+      "Family": "Famille",
+      "Fantasy": "Fantastique",
+      "History": "Historique",
+      "Horror": "Horreur",
+      "Music": "Comédie Musicale",
+      "Mystery": "Mystère",
+      "Romance": "Romance",
+      "Science Fiction": "Science-fiction",
+      "Thriller": "Thriller",
+      "War": "Guerre",
+      "Western": "Western"
+    };
+
+    // Sélectionner les genres correspondants
+    const matchedGenres = movieDetails.genres
+      .map(g => genreMapping[g.name])
+      .filter(g => g && availableGenres.includes(g));
+
+    genreChoices.removeActiveItems();
+    genreChoices.setChoiceByValue(matchedGenres);
   }
-
-// app.ts
-export function modifierFilm(id: number) {
-  const film = films.find(f => f.id === id);
-  if (!film) return;
-
-  // On passe en mode édition
-  filmEnCoursDeModification = id;
-
-  // Remplir le formulaire
-  const titleInput = document.getElementById("film-title") as HTMLInputElement;
-  titleInput.value = film.titre;
-
-  if (genreChoices) {
-    genreChoices.clearStore();
-    film.genres.forEach((g) => {
-      genreChoices!.setChoiceByValue(g);
-    });
-  }
-
-  const anneeSelect = document.getElementById("annee") as HTMLSelectElement;
-  anneeSelect.value = film.annee.toString();
-
-  const dureeInput = document.getElementById("duree") as HTMLInputElement;
-  dureeInput.value = String(film.duree);
-
-  const realisationsInput = document.getElementById("realisations") as HTMLInputElement;
-  realisationsInput.value = film.realisateur;
-
-  const distributionInput = document.getElementById("distribution") as HTMLInputElement;
-  distributionInput.value = film.acteurs.join(", ");
-
-  const synopsisTextarea = document.getElementById("synopsis") as HTMLTextAreaElement;
-  synopsisTextarea.value = film.synopsis;
-
-  const noteSelect = document.getElementById("note") as HTMLSelectElement;
-  noteSelect.value = String(film.note);
-
-  const dateVisionnageInput = document.getElementById("dateVisionnage") as HTMLInputElement;
-  dateVisionnageInput.value = film.dateDeVisionnage;
-
-  const plateformeSelect = document.getElementById("plateforme") as HTMLSelectElement;
-  plateformeSelect.value = film.plateforme;
-
-  const afficheHiddenInput = document.getElementById("affiche") as HTMLInputElement;
-  afficheHiddenInput.value = film.affiche;
-
-  // On modifie le texte du bouton pour informer l’utilisateur qu'on est en mode édition
-  const addButton = document.getElementById("ajouter-film-btn") as HTMLButtonElement;
-  addButton.textContent = "Enregistrer modifications";
-}
-
-// 1. Sélectionner les boutons "Login" & "Signup" du header
-const loginBtn = document.querySelector(".login-btn") as HTMLButtonElement;
-const signupBtn = document.querySelector(".signup-btn") as HTMLButtonElement;
-
-const loginModal = document.getElementById("login-modal") as HTMLDivElement;
-const signupModal = document.getElementById("signup-modal") as HTMLDivElement;
-
-if (loginBtn) {
-  loginBtn.addEventListener("click", () => {
-    loginModal.classList.remove("hidden");
-  });
-}
-
-if (signupBtn) {
-  signupBtn.addEventListener("click", () => {
-    signupModal.classList.remove("hidden");
-  });
-}
-
-// 2. Gérer les boutons "Annuler"
-const loginCancel = document.getElementById("login-cancel") as HTMLButtonElement;
-if (loginCancel) {
-  loginCancel.addEventListener("click", () => {
-    loginModal.classList.add("hidden");
-  });
-}
-
-const signupCancel = document.getElementById("signup-cancel") as HTMLButtonElement;
-if (signupCancel) {
-  signupCancel.addEventListener("click", () => {
-    signupModal.classList.add("hidden");
-  });
-}
-
-const loginSubmit = document.getElementById("login-submit") as HTMLButtonElement;
-if (loginSubmit) {
-  loginSubmit.addEventListener("click", () => {
-    const emailInput = document.getElementById("login-email") as HTMLInputElement;
-    const passInput = document.getElementById("login-password") as HTMLInputElement;
-
-    const email = emailInput.value.trim();
-    const password = passInput.value.trim();
-
-    const user = connecterUtilisateur(email, password);
-    if (user) {
-      console.log("Connexion réussie pour :", user.pseudo);
-      localStorage.setItem("connectedUserId", user.id.toString());
-      // Fermer la modal
-      loginModal.classList.add("hidden");
-      // Mettre à jour l'UI (masquer boutons login, signup, afficher avatar, etc.)
-      updateHeaderUI();
-    } else {
-      alert("Identifiants invalides");
-    }
-  });
-}
-
-const signupSubmit = document.getElementById("signup-submit") as HTMLButtonElement;
-if (signupSubmit) {
-  signupSubmit.addEventListener("click", () => {
-    const pseudoInput = document.getElementById("signup-pseudo") as HTMLInputElement;
-    const emailInput = document.getElementById("signup-email") as HTMLInputElement;
-    const passInput = document.getElementById("signup-password") as HTMLInputElement;
-
-    const pseudo = pseudoInput.value.trim();
-    const email = emailInput.value.trim();
-    const password = passInput.value.trim();
-
-    // TODO: validations (ex. email non vide, password min 4 chars, etc.)
-    const newUser = inscrireUtilisateur(pseudo, email, password);
-    if (newUser) {
-      alert("Inscription réussie, vous pouvez vous connecter maintenant");
-      signupModal.classList.add("hidden");
-    }
-  });
 }

@@ -979,3 +979,137 @@ textarea {
 .reset-btn:hover {
   background-color: var(--accent-color-hover);
 }
+
+/* Watchlist Section */
+.watchlist-section {
+  padding: 2rem;
+}
+
+.watchlist-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.watchlist-controls {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+}
+
+.watchlist-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 2rem;
+  padding: 1rem;
+}
+
+.watchlist-card {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: transform 0.2s ease;
+}
+
+.watchlist-card:hover {
+  transform: translateY(-5px);
+}
+
+.watchlist-card.priority-haute {
+  border-left: 4px solid #ff4444;
+}
+
+.watchlist-card.priority-moyenne {
+  border-left: 4px solid #ffbb33;
+}
+
+.watchlist-card.priority-basse {
+  border-left: 4px solid #00C851;
+}
+
+.watchlist-poster {
+  position: relative;
+  width: 100%;
+  height: 200px;
+}
+
+.watchlist-poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.priority-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 5px;
+  border-radius: 50%;
+  color: white;
+}
+
+.watchlist-info {
+  padding: 1rem;
+}
+
+.watchlist-info h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.2rem;
+}
+
+.director {
+  color: #888;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.added-date {
+  font-size: 0.8rem;
+  color: #666;
+  margin-bottom: 1rem;
+}
+
+.notes {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.5rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  margin: 0.5rem 0;
+}
+
+.watchlist-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.priority-select {
+  flex: 1;
+  padding: 0.5rem;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.watchlist-actions button {
+  padding: 0.5rem;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: white;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.watchlist-actions button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.edit-notes {
+  color: #ffbb33;
+}
+
+.remove-from-watchlist {
+  color: #ff4444;
+}

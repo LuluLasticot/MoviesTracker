@@ -525,6 +525,36 @@
             </div>
         </section>
 <!-- ===================== END DASHBOARD SECTION ===================== -->
+
+<!-- ===================== WATCHLIST SECTION ===================== -->
+        <section class="watchlist-section hidden">
+            <header class="watchlist-header">
+                <h1>Ma liste de films à voir</h1>
+                <p>Organisez et gardez une trace des films que vous souhaitez regarder.</p>
+            </header>
+
+            <div class="watchlist-controls">
+                <div class="watchlist-filters">
+                    <select id="watchlist-priority-filter">
+                        <option value="all">Toutes les priorités</option>
+                        <option value="haute">Priorité haute</option>
+                        <option value="moyenne">Priorité moyenne</option>
+                        <option value="basse">Priorité basse</option>
+                    </select>
+                </div>
+                <div class="watchlist-sort">
+                    <select id="watchlist-sort">
+                        <option value="priority">Trier par priorité</option>
+                        <option value="date">Trier par date d'ajout</option>
+                        <option value="title">Trier par titre</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="watchlist-grid">
+                <!-- Les films seront générés dynamiquement ici -->
+            </div>
+        </section>
     </main>
     <script type="module" src="./src/app.ts"></script>
 <!-- ===================== MODAL LOGIN ===================== -->
