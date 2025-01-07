@@ -1,9 +1,12 @@
 import { defineConfig } from "vite";
 
 export default defineConfig({
-  // Chemin de sortie (build) si tu veux que ça sorte dans `dist/`
   build: {
     outDir: "dist",
+    sourcemap: true,
   },
-  // Si tu veux une config plus avancée, tu peux la mettre ici
+  server: {
+    port: 3000,
+    open: true
+  }
 });
