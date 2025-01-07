@@ -195,13 +195,11 @@ body {
   }
 
   #logout-btn {
-    position: absolute;
-    bottom: 1rem;
-    left: 1rem;
-    width: calc(100% - 2rem);
-    padding: 0.75rem;
-    background-color: var(--error-color);
-    color: white;
+    position: static; /* Changé de absolute à static */
+    width: auto;
+    padding: 0.5rem;
+    background-color: transparent; /* Changé pour être plus discret */
+    color: var(--text-color);
     border: none;
     border-radius: 4px;
     display: flex;
@@ -209,10 +207,16 @@ body {
     justify-content: center;
     gap: 0.5rem;
     cursor: pointer;
+    margin-left: 0.5rem;
   }
 
-  #logout-btn span {
-    display: inline !important;
+  #logout-btn:hover {
+    color: var(--error-color);
+  }
+
+  .user-section {
+    margin-left: auto;
+    padding-right: 1rem;
   }
 
   .desktop-menu {
@@ -236,10 +240,15 @@ body {
       position: absolute;
       left: 50%;
       transform: translateX(-50%);
+      z-index: 1;
   }
 
   .navbar {
       padding: 0.5rem 1rem;
+      position: relative;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
   }
 
   .auth-buttons button span,
@@ -256,6 +265,7 @@ body {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    margin-left: auto;
   }
 
   #avatar-container img {
@@ -1258,10 +1268,6 @@ textarea {
   }
 
   .stats-cards {
-      grid-template-columns: 1fr;
-  }
-
-  .dashboard-grid {
       grid-template-columns: 1fr;
   }
 
