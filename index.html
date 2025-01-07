@@ -9,11 +9,19 @@
 </head>
 <body>
     <nav class="navbar">
+        <!-- Menu Burger -->
+        <button class="burger-menu" id="burger-menu">
+            <i class="fas fa-bars"></i>
+        </button>
+    
+        <!-- Logo -->
         <div class="logo">
             <i class="fas fa-film"></i>
             <span>FILM TRACKER</span>
         </div>
-        <div class="nav-container">
+    
+        <!-- Menu Mobile (initialement caché) -->
+        <div class="mobile-menu hidden" id="mobile-menu">
             <div class="nav-links">
                 <a href="#" class="active" data-section="home">
                     <i class="fas fa-home"></i>
@@ -33,26 +41,45 @@
                 </a>
             </div>
         </div>
-        <div class="auth-buttons">
-            <button class="search-btn">
-                <i class="fas fa-search"></i>
-            </button>
-            <button class="login-btn">
-                <i class="fas fa-sign-in-alt"></i>
-                <span>Login</span>
-            </button>
-            <button class="signup-btn">
-                <i class="fas fa-user-plus"></i>
-                <span>Sign Up</span>
-            </button>
+    
+        <!-- Menu Desktop -->
+        <div class="nav-container desktop-menu">
+            <div class="nav-links">
+                <a href="#" class="active" data-section="home">
+                    <i class="fas fa-home"></i>
+                    <span>Home</span>
+                </a>
+                <a href="#" data-section="dashboard">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" data-section="watchlist">
+                    <i class="fas fa-list"></i>
+                    <span>Watchlist</span>
+                </a>
+                <a href="#" data-section="profile">
+                    <i class="fas fa-user"></i>
+                    <span>Profile</span>
+                </a>
+            </div>
         </div>
-        <div id="avatar-container" style="display: none;">
-            <img id="avatar-img" src="assets/images/default-avatar.png" alt="Avatar">
-            <span id="avatar-pseudo"></span>
-            <button id="logout-btn">
-                <i class="fas fa-sign-out-alt"></i>
-                <span>Déconnexion</span>
-            </button>
+    
+        <!-- User Section (Auth Buttons or Avatar) -->
+        <div class="user-section">
+            <div class="auth-buttons">
+                <button class="login-btn">
+                    <i class="fas fa-sign-in-alt"></i>
+                    <span>Login</span>
+                </button>
+                <button class="signup-btn">
+                    <i class="fas fa-user-plus"></i>
+                    <span>Sign Up</span>
+                </button>
+            </div>
+            <div id="avatar-container" style="display: none;">
+                <img id="avatar-img" src="assets/images/default-avatar.png" alt="Avatar">
+                <span id="avatar-pseudo"></span>
+            </div>
         </div>
     </nav>
 

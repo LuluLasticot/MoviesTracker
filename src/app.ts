@@ -737,5 +737,43 @@ async function fillFormWithTMDB(movieId: number): Promise<void> {
   }
 }
 
+// Gestion du menu burger
+const burgerMenu = document.getElementById('burger-menu');
+const mobileMenu = document.getElementById('mobile-menu');
+let isMenuOpen = false;
+
+burgerMenu?.addEventListener('click', () => {
+    isMenuOpen = !isMenuOpen;
+    if (isMenuOpen) {
+        mobileMenu?.classList.remove('hidden');
+        mobileMenu?.classList.add('show');
+    } else {
+        mobileMenu?.classList.remove('show');
+        mobileMenu?.classList.add('hidden');
+    }
+});
+
+// Fermer le menu mobile quand on clique sur un lien
+const mobileLinks = mobileMenu?.querySelectorAll('.nav-links a');
+mobileLinks?.forEach(link => {
+    link.addEventListener('click', () => {
+        isMenuOpen = false;
+        mobileMenu?.classList.remove('show');
+        mobileMenu?.classList.add('hidden');
+    });
+});
+
+// Fermer le menu si on clique en dehors
+document.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    if (isMenuOpen && 
+        !mobileMenu?.contains(target) && 
+        !burgerMenu?.contains(target)) {
+        isMenuOpen = false;
+        mobileMenu?.classList.remove('show');
+        mobileMenu?.classList.add('hidden');
+    }
+});
+
 // app.ts ou un code JS
 // ... (reste du code inchangé)
