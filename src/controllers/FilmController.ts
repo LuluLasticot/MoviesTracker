@@ -156,14 +156,18 @@ export function afficherFilms(films?: Film[]): void {
     // Si aucun films n'est passé en paramètre, utiliser les films de l'utilisateur courant
     const filmsToDisplay = films || (currentUserId ? userFilmsStorage[currentUserId] : defaultFilms);
 
-    // Mettre à jour les films dans le FilterController
-    if (filterController) {
-        filterController.setFilms(filmsToDisplay);
-    } else {
-        // Si le FilterController n'est pas encore initialisé, l'initialiser
-        filterController = new FilterController();
-        filterController.setFilms(filmsToDisplay);
+    if (!filmsToDisplay) {
+        console.error('Aucun film à afficher');
+        return;
     }
+
+    // S'assurer que filterController est initialisé
+    if (!filterController) {
+        filterController = new FilterController();
+    }
+
+    // Mettre à jour les films dans le FilterController
+    filterController.setFilms(filmsToDisplay);
 
     // Mettre à jour le compteur de films
     updateMovieCount();
@@ -177,7 +181,7 @@ export function afficherFilms(films?: Film[]): void {
     // Déclencher l'événement de mise à jour des films pour le dashboard
     const event = new CustomEvent('filmsUpdated', { 
         detail: { 
-            films: filmsToDisplay || [] 
+            films: filmsToDisplay 
         } 
     });
     document.dispatchEvent(event);
