@@ -741,5 +741,57 @@ async function fillFormWithTMDB(movieId: number): Promise<void> {
   }
 }
 
+// Gestion du menu burger
+const burgerMenu = document.getElementById('burger-menu');
+const mobileMenu = document.getElementById('mobile-menu');
+let isMenuOpen = false;
+
+// Créer l'overlay pour le menu mobile
+const overlay = document.createElement('div');
+overlay.className = 'mobile-menu-overlay';
+document.body.appendChild(overlay);
+
+burgerMenu?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    isMenuOpen = !isMenuOpen;
+    if (isMenuOpen) {
+        mobileMenu?.classList.remove('hidden');
+        mobileMenu?.classList.add('show');
+        overlay.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    } else {
+        closeMenu();
+    }
+});
+
+// Fonction pour fermer le menu
+function closeMenu() {
+    isMenuOpen = false;
+    mobileMenu?.classList.remove('show');
+    mobileMenu?.classList.add('hidden');
+    overlay.classList.remove('show');
+    document.body.style.overflow = '';
+}
+
+// Mettre à jour les event listeners
+overlay.addEventListener('click', closeMenu);
+
+const mobileLinks = mobileMenu?.querySelectorAll('.nav-links a');
+mobileLinks?.forEach(link => {
+    link.addEventListener('click', closeMenu);
+});
+
+// Fermer le menu si on clique en dehors
+document.addEventListener('click', (event) => {
+    const target = event.target as HTMLElement;
+    if (isMenuOpen && 
+        !mobileMenu?.contains(target) && 
+        !burgerMenu?.contains(target)) {
+        isMenuOpen = false;
+        mobileMenu?.classList.remove('show');
+        mobileMenu?.classList.add('hidden');
+    }
+});
+
 // app.ts ou un code JS
 // ... (reste du code inchangé)
