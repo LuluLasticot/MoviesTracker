@@ -9,25 +9,50 @@
 </head>
 <body>
     <nav class="navbar">
-        <div class="logo">FILM TRACKER</div>
+        <div class="logo">
+            <i class="fas fa-film"></i>
+            <span>FILM TRACKER</span>
+        </div>
         <div class="nav-container">
             <div class="nav-links">
-                <a href="#" class="active">Home</a>
-                <a href="#">Dashboard</a>
-                <a href="#">Watchlist</a>
-                <a href="#">Profile</a>
+                <a href="#" class="active" data-section="home">
+                    <i class="fas fa-home"></i>
+                    <span>Home</span>
+                </a>
+                <a href="#" data-section="dashboard">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" data-section="watchlist">
+                    <i class="fas fa-list"></i>
+                    <span>Watchlist</span>
+                </a>
+                <a href="#" data-section="profile">
+                    <i class="fas fa-user"></i>
+                    <span>Profile</span>
+                </a>
             </div>
         </div>
         <div class="auth-buttons">
             <button class="search-btn">
                 <i class="fas fa-search"></i>
             </button>
-            <button class="login-btn">Login</button>
-            <button class="signup-btn">Sign Up</button>
+            <button class="login-btn">
+                <i class="fas fa-sign-in-alt"></i>
+                <span>Login</span>
+            </button>
+            <button class="signup-btn">
+                <i class="fas fa-user-plus"></i>
+                <span>Sign Up</span>
+            </button>
         </div>
         <div id="avatar-container" style="display: none;">
+            <img id="avatar-img" src="assets/images/default-avatar.png" alt="Avatar">
             <span id="avatar-pseudo"></span>
-            <button id="logout-btn">Déconnexion</button>
+            <button id="logout-btn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Déconnexion</span>
+            </button>
         </div>
     </nav>
 
@@ -54,12 +79,22 @@
             
             <!-- Titre du film -->
             <div class="form-group">
-                <label for="film-title">Titre du film</label>
-                <input
-                type="text"
-                id="film-title"
-                placeholder="Inception, Le Seigneur des Anneaux, Interstellar..."
-                />
+                <label for="film-title">
+                    <i class="fas fa-film"></i>
+                    Rechercher un film
+                </label>
+                <div class="search-container">
+                    <input
+                        type="text"
+                        id="film-title"
+                        placeholder="Tapez le titre d'un film..."
+                        autocomplete="off"
+                    />
+                    <div class="search-spinner" style="display: none;">
+                        <i class="fas fa-spinner fa-spin"></i>
+                    </div>
+                </div>
+                <div id="search-suggestions" class="search-suggestions"></div>
             </div>
         
             <!-- Ligne avec Genre(s), Année, Durée -->
@@ -514,24 +549,44 @@
                 </div>
         
                 <!-- Badges -->
-                <div class="dashboard-card">
-                    <h3>Vos badges</h3>
-                    <div class="badges-grid">
-                        <div class="badge">
-                            <i class="fas fa-award"></i>
-                            <span>Cinéphile</span>
+                <section class="achievements-section">
+                    <div class="achievements-header">
+                        <h2>Mes Succès Cinématographiques</h2>
+                        <div class="achievements-stats">
+                            <span class="total-badges">Badges débloqués : <strong>0/50</strong></span>
+                            <div class="progress-bar">
+                                <div class="progress" style="width: 0%"></div>
+                            </div>
                         </div>
-                        <div class="badge">
-                            <i class="fas fa-rocket"></i>
-                            <span>Expert SF</span>
-                        </div>
-                        <div class="badge">
-                            <i class="fas fa-trophy"></i>
-                            <span>Nolan Fan</span>
-                        </div>
-                        <!-- Autres badges -->
                     </div>
-                </div>
+                    
+                    <div class="badges-categories">
+                        <button class="category-btn active" data-category="all">
+                            <i class="fas fa-trophy"></i>
+                            Tous
+                        </button>
+                        <button class="category-btn" data-category="collection">
+                            <i class="fas fa-film"></i>
+                            Collection
+                        </button>
+                        <button class="category-btn" data-category="genres">
+                            <i class="fas fa-tags"></i>
+                            Genres
+                        </button>
+                        <button class="category-btn" data-category="special">
+                            <i class="fas fa-star"></i>
+                            Spéciaux
+                        </button>
+                        <button class="category-btn" data-category="social">
+                            <i class="fas fa-users"></i>
+                            Social
+                        </button>
+                    </div>
+
+                    <div class="badges-grid">
+                        <!-- Les badges seront générés dynamiquement ici -->
+                    </div>
+                </section>
             </div>
         </section>
 <!-- ===================== END DASHBOARD SECTION ===================== -->

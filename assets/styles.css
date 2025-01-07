@@ -370,12 +370,13 @@ textarea {
   position: relative;
   border-radius: 1rem;
   overflow: hidden;
-  transition: transform 0.3s;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
   aspect-ratio: 2/3;
 }
 
 .movie-card:hover {
-  transform: translateY(-10px);
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
 }
 
 .movie-card img {
@@ -1605,4 +1606,257 @@ main {
 /* Style pour l'indicateur de défilement avec un symbole Unicode */
 .scroll-indicator i {
     display: none; /* On cache l'icône Font Awesome pour l'instant */
+}
+
+/* Animation de chargement */
+.loading-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Animation des boutons */
+.btn {
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn:after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.3s ease, height 0.3s ease;
+}
+
+.btn:hover:after {
+  width: 200%;
+  height: 200%;
+}
+
+.badge {
+  position: relative;
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  transition: transform 0.3s ease;
+}
+
+.badge:hover {
+  transform: translateY(-5px);
+}
+
+.badge-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 15px;
+  background: linear-gradient(45deg, var(--primary-color), var(--accent-color));
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+}
+
+.badge.locked {
+  filter: grayscale(1);
+  opacity: 0.7;
+}
+
+.badge-progress {
+  margin-top: 10px;
+  height: 4px;
+  background: var(--border-color);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.badge-progress .progress {
+  height: 100%;
+  background: var(--primary-color);
+  transition: width 0.3s ease;
+}
+
+/* Styles pour les badges individuels */
+.badge {
+    position: relative;
+    background: var(--bg-primary);
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.badge:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.badge.locked {
+    opacity: 0.7;
+    filter: grayscale(1);
+}
+
+.badge-icon {
+    font-size: 2.5rem;
+    color: var(--accent-color);
+    margin-bottom: 1rem;
+}
+
+.badge.locked .badge-icon {
+    color: var(--text-secondary);
+}
+
+.badge-title {
+    font-size: 1rem;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.badge-description {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+    line-height: 1.4;
+}
+
+.badge-progress {
+    width: 100%;
+    height: 6px;
+    background: var(--bg-secondary);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: auto;
+}
+
+.badge-progress .progress {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-color) 0%, var(--accent-color-light) 100%);
+    transition: width 0.3s ease;
+}
+
+.badge.locked .badge-progress .progress {
+    background: var(--text-secondary);
+}
+
+/* Animation pour les badges débloqués */
+@keyframes unlockBadge {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.badge.just-unlocked {
+    animation: unlockBadge 0.5s ease;
+}
+
+/* ===== ACHIEVEMENTS SECTION ===== */
+.achievements-section {
+    background: var(--bg-secondary);
+    border-radius: 15px;
+    padding: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin: 2rem 0;
+}
+
+.achievements-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.achievements-header h2 {
+    color: var(--text-primary);
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+}
+
+.achievements-stats {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.total-badges {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+}
+
+.total-badges strong {
+    color: var(--text-primary);
+}
+
+.progress-bar {
+    width: 200px;
+    height: 8px;
+    background: var(--bg-primary);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-bar .progress {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-color) 0%, var(--accent-color-light) 100%);
+    transition: width 0.3s ease;
+}
+
+/* Styles pour les catégories de badges */
+.badges-categories {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin: 2rem 0;
+    flex-wrap: wrap;
+}
+
+.category-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    border: none;
+    border-radius: 25px;
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.category-btn i {
+    font-size: 1rem;
+}
+
+.category-btn:hover {
+    background: var(--bg-hover);
+    transform: translateY(-2px);
+}
+
+.category-btn.active {
+    background: var(--accent-color);
+    color: white;
+    box-shadow: 0 2px 8px rgba(var(--accent-color-rgb), 0.3);
+}
+
+/* Grille des badges */
+.badges-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1.5rem;
+    padding: 1rem 0;
 }

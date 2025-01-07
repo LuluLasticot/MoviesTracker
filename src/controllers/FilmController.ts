@@ -5,6 +5,7 @@ import { searchMoviesOnTMDB, getMovieDetails } from "../api/tmdb";
 import { updateMovieCount } from "../app";
 import { FilterController } from "./FilterController";
 import Choices from 'choices.js';
+import { BadgeController } from './BadgeController';
 
 // Stockage des films par utilisateur
 let userFilmsStorage: { [key: number]: Film[] } = {};
@@ -166,6 +167,12 @@ export function afficherFilms(films?: Film[]): void {
 
     // Mettre à jour le compteur de films
     updateMovieCount();
+
+    // Mettre à jour les badges
+    const userId = parseInt(localStorage.getItem('currentUserId') || '0');
+    if (userId) {
+        BadgeController.getInstance().checkAndUpdateBadges(userId, filmsToDisplay);
+    }
 
     // Déclencher l'événement de mise à jour des films pour le dashboard
     const event = new CustomEvent('filmsUpdated', { 
