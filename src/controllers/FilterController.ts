@@ -231,7 +231,7 @@ export class FilterController {
                         </div>
                     </div>
                 `;
-            }).join('");
+            }).join('');
 
             // Mettre à jour le DOM
             container.innerHTML = newHtml;
