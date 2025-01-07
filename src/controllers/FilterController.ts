@@ -24,49 +24,66 @@ export class FilterController {
     }
 
     setFilms(films: Film[]) {
-        this.films = films;
+        this.films = [...films]; // Créer une copie du tableau
         this.applyFilters();
     }
 
     private initializeFilters() {
         // Tri
         const sortSelect = document.getElementById('sort-select') as HTMLSelectElement;
-        sortSelect?.addEventListener('change', () => {
-            this.filterState.sort = sortSelect.value;
-            this.applyFilters();
-        });
+        if (sortSelect) {
+            sortSelect.value = this.filterState.sort;
+            sortSelect.addEventListener('change', () => {
+                this.filterState.sort = sortSelect.value;
+                this.applyFilters();
+            });
+        }
 
         // Plateforme
         const platformSelect = document.getElementById('platform-select') as HTMLSelectElement;
-        platformSelect?.addEventListener('change', () => {
-            this.filterState.platform = platformSelect.value;
-            this.applyFilters();
-        });
+        if (platformSelect) {
+            platformSelect.value = this.filterState.platform;
+            platformSelect.addEventListener('change', () => {
+                this.filterState.platform = platformSelect.value;
+                this.applyFilters();
+            });
+        }
 
         // Genre
         const genreSelect = document.getElementById('genre-select') as HTMLSelectElement;
-        genreSelect?.addEventListener('change', () => {
-            this.filterState.genre = genreSelect.value;
-            this.applyFilters();
-        });
+        if (genreSelect) {
+            genreSelect.value = this.filterState.genre;
+            genreSelect.addEventListener('change', () => {
+                this.filterState.genre = genreSelect.value;
+                this.applyFilters();
+            });
+        }
 
         // Année min
         const yearMinInput = document.getElementById('year-min') as HTMLInputElement;
-        yearMinInput?.addEventListener('change', () => {
-            this.filterState.yearMin = yearMinInput.value ? parseInt(yearMinInput.value) : null;
-            this.applyFilters();
-        });
+        if (yearMinInput) {
+            yearMinInput.value = this.filterState.yearMin?.toString() || '';
+            yearMinInput.addEventListener('change', () => {
+                this.filterState.yearMin = yearMinInput.value ? parseInt(yearMinInput.value) : null;
+                this.applyFilters();
+            });
+        }
 
         // Année max
         const yearMaxInput = document.getElementById('year-max') as HTMLInputElement;
-        yearMaxInput?.addEventListener('change', () => {
-            this.filterState.yearMax = yearMaxInput.value ? parseInt(yearMaxInput.value) : null;
-            this.applyFilters();
-        });
+        if (yearMaxInput) {
+            yearMaxInput.value = this.filterState.yearMax?.toString() || '';
+            yearMaxInput.addEventListener('change', () => {
+                this.filterState.yearMax = yearMaxInput.value ? parseInt(yearMaxInput.value) : null;
+                this.applyFilters();
+            });
+        }
 
         // Réinitialisation
         const resetButton = document.getElementById('reset-filters');
-        resetButton?.addEventListener('click', () => this.resetFilters());
+        if (resetButton) {
+            resetButton.addEventListener('click', () => this.resetFilters());
+        }
     }
 
     private resetFilters() {
@@ -80,19 +97,33 @@ export class FilterController {
         };
 
         // Réinitialiser les éléments du DOM
-        (document.getElementById('sort-select') as HTMLSelectElement).value = 'date-desc';
-        (document.getElementById('platform-select') as HTMLSelectElement).value = '';
-        (document.getElementById('genre-select') as HTMLSelectElement).value = '';
-        (document.getElementById('year-min') as HTMLInputElement).value = '';
-        (document.getElementById('year-max') as HTMLInputElement).value = '';
+        const elements = {
+            'sort-select': 'date-desc',
+            'platform-select': '',
+            'genre-select': '',
+            'year-min': '',
+            'year-max': ''
+        };
+
+        Object.entries(elements).forEach(([id, value]) => {
+            const element = document.getElementById(id) as HTMLSelectElement | HTMLInputElement;
+            if (element) {
+                element.value = value;
+            }
+        });
 
         // Réappliquer les filtres
         this.applyFilters();
     }
 
     private applyFilters() {
+        if (!this.films) return;
+
+        // Créer une copie du tableau original
+        this.filteredFilms = [...this.films];
+
         // Appliquer les filtres
-        this.filteredFilms = this.films.filter(film => {
+        this.filteredFilms = this.filteredFilms.filter(film => {
             // Filtre par plateforme
             if (this.filterState.platform && film.plateforme !== this.filterState.platform) {
                 return false;
@@ -118,21 +149,21 @@ export class FilterController {
         this.filteredFilms.sort((a, b) => {
             switch (this.filterState.sort) {
                 case 'date-desc':
-                    return new Date(b.dateDeVisionnage).getTime() - new Date(a.dateDeVisionnage).getTime();
+                    return new Date(b.dateDeVisionnage || '').getTime() - new Date(a.dateDeVisionnage || '').getTime();
                 case 'date-asc':
-                    return new Date(a.dateDeVisionnage).getTime() - new Date(b.dateDeVisionnage).getTime();
+                    return new Date(a.dateDeVisionnage || '').getTime() - new Date(b.dateDeVisionnage || '').getTime();
                 case 'title-asc':
                     return a.titre.localeCompare(b.titre);
                 case 'title-desc':
                     return b.titre.localeCompare(a.titre);
                 case 'rating-desc':
-                    return b.note - a.note;
+                    return (b.note || 0) - (a.note || 0);
                 case 'rating-asc':
-                    return a.note - b.note;
+                    return (a.note || 0) - (b.note || 0);
                 case 'year-desc':
-                    return b.annee - a.annee;
+                    return (b.annee || 0) - (a.annee || 0);
                 case 'year-asc':
-                    return a.annee - b.annee;
+                    return (a.annee || 0) - (b.annee || 0);
                 default:
                     return 0;
             }
@@ -146,54 +177,70 @@ export class FilterController {
         const container = document.querySelector('.movies-grid');
         if (!container) return;
 
-        container.innerHTML = '';
+        // Sauvegarder le contenu HTML actuel
+        const oldHtml = container.innerHTML;
 
-        this.filteredFilms.forEach((film) => {
-            const cardHTML = `
-                <div class="movie-card" data-id="${film.id}">
-                    <img src="${film.affiche}" alt="${film.titre}">
-                    <div class="movie-info">
-                        <h3>${film.titre}</h3>
-                        <p>${film.annee}</p>
-                        <div class="rating">${film.note}/10</div>
-                    </div>
-                    <div class="card-buttons">
-                        <button class="delete-btn" data-id="${film.id}" title="Supprimer">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                        <button class="edit-btn" data-id="${film.id}" title="Modifier">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                    </div>
+        // Générer le nouveau HTML
+        const newHtml = this.filteredFilms.map((film) => `
+            <div class="movie-card" data-id="${film.id}">
+                <img src="${film.affiche}" alt="${film.titre}">
+                <div class="movie-info">
+                    <h3>${film.titre}</h3>
+                    <p>${film.annee}</p>
+                    <div class="rating">${film.note}/10</div>
                 </div>
-            `;
-            container.innerHTML += cardHTML;
-        });
+                <div class="card-buttons">
+                    <button class="delete-btn" data-id="${film.id}" title="Supprimer">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                    <button class="edit-btn" data-id="${film.id}" title="Modifier">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                </div>
+            </div>
+        `).join('');
 
-        // Réattacher les event listeners pour les boutons
-        this.reattachCardEventListeners();
+        // Mettre à jour le DOM uniquement si le contenu a changé
+        if (newHtml !== oldHtml) {
+            container.innerHTML = newHtml;
+            this.reattachCardEventListeners();
+        }
     }
 
     private reattachCardEventListeners() {
         // Boutons de suppression
         document.querySelectorAll('.delete-btn').forEach(btn => {
             btn.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
                 const button = event.currentTarget as HTMLButtonElement;
                 const filmId = parseInt(button.getAttribute('data-id') || '0');
-                // Déclencher un événement personnalisé pour la suppression
-                const deleteEvent = new CustomEvent('filmDelete', { detail: { filmId } });
-                document.dispatchEvent(deleteEvent);
+                if (filmId) {
+                    const deleteEvent = new CustomEvent('filmDelete', { 
+                        detail: { filmId },
+                        bubbles: true,
+                        cancelable: true 
+                    });
+                    document.dispatchEvent(deleteEvent);
+                }
             });
         });
 
         // Boutons de modification
         document.querySelectorAll('.edit-btn').forEach(btn => {
             btn.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
                 const button = event.currentTarget as HTMLButtonElement;
                 const filmId = parseInt(button.getAttribute('data-id') || '0');
-                // Déclencher un événement personnalisé pour la modification
-                const editEvent = new CustomEvent('filmEdit', { detail: { filmId } });
-                document.dispatchEvent(editEvent);
+                if (filmId) {
+                    const editEvent = new CustomEvent('filmEdit', { 
+                        detail: { filmId },
+                        bubbles: true,
+                        cancelable: true 
+                    });
+                    document.dispatchEvent(editEvent);
+                }
             });
         });
     }
