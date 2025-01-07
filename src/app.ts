@@ -39,10 +39,15 @@ document.addEventListener("DOMContentLoaded", async () => {
   try {
     await chargerUtilisateurs();
     
+    // Initialiser les modals d'authentification
+    initAuthModals();
+    
     // Vérifier si un utilisateur est déjà connecté (stocké dans localStorage)
-    const storedUser = localStorage.getItem('currentUser');
-    if (storedUser) {
-      currentUserId = JSON.parse(storedUser).id;
+    const storedUserId = localStorage.getItem('currentUserId');
+    if (storedUserId) {
+      currentUserId = parseInt(storedUserId);
+      // Mettre à jour l'interface utilisateur
+      updateHeaderUI();
       // Charger les films de l'utilisateur
       films = await chargerFilms(currentUserId);
       // Initialiser la watchlist avec l'ID de l'utilisateur
@@ -62,7 +67,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.dispatchEvent(new CustomEvent('filmsUpdated', { detail: { films } }));
     
     // Initialiser les autres composants
-    initAuthModals();
     initFilmsStuff();
     await initAutocomplete();
     
