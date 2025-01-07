@@ -1,7 +1,7 @@
 // src/api/tmdb.ts
 
 // Remplace "TA_CLE_ICI" par ta vraie clé d'API TMDB.
-const TMDB_API_KEY = "434dd1cd2aff12b462a7b229be1923a3";
+const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY || "434dd1cd2aff12b462a7b229be1923a3";
 
 export interface TMDBMovieDetails {
   id: number;
