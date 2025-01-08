@@ -217,17 +217,39 @@ export class DashboardController {
         if (recordsList) {
             recordsList.innerHTML = `
                 <div class="record-item">
-                    <i class="fas fa-hourglass-start"></i>
+                    <div class="record-icon">
+                        <i class="fas fa-hourglass-start"></i>
+                    </div>
                     <div class="record-info">
                         <h4>Film le plus court</h4>
-                        <p>${this.stats.records.shortest.titre} (${this.stats.records.shortest.duree} min)</p>
+                        <p class="record-title">${this.stats.records.shortest.titre}</p>
+                        <p class="record-details">
+                            <span class="duration">${this.stats.records.shortest.duree} min</span>
+                            <span class="year">${this.stats.records.shortest.annee}</span>
+                        </p>
+                        <div class="record-genres">
+                            ${this.stats.records.shortest.genres.map(genre => 
+                                `<span class="genre-tag">${genre}</span>`
+                            ).join('')}
+                        </div>
                     </div>
                 </div>
                 <div class="record-item">
-                    <i class="fas fa-hourglass-end"></i>
+                    <div class="record-icon">
+                        <i class="fas fa-hourglass-end"></i>
+                    </div>
                     <div class="record-info">
                         <h4>Film le plus long</h4>
-                        <p>${this.stats.records.longest.titre} (${this.stats.records.longest.duree} min)</p>
+                        <p class="record-title">${this.stats.records.longest.titre}</p>
+                        <p class="record-details">
+                            <span class="duration">${this.stats.records.longest.duree} min</span>
+                            <span class="year">${this.stats.records.longest.annee}</span>
+                        </p>
+                        <div class="record-genres">
+                            ${this.stats.records.longest.genres.map(genre => 
+                                `<span class="genre-tag">${genre}</span>`
+                            ).join('')}
+                        </div>
                     </div>
                 </div>
             `;
@@ -235,59 +257,51 @@ export class DashboardController {
     }
 
     private calculateYearlyStats(films: Film[]) {
-        // Obtenir l'année courante
         const currentYear = new Date().getFullYear();
-        
-        // Créer un Map pour compter les films par année de visionnage
         const yearCounts = new Map<number, number>();
         
-        // Initialiser les 5 dernières années avec 0
         for (let year = currentYear; year > currentYear - 5; year--) {
             yearCounts.set(year, 0);
         }
         
-        // Compter les films par année de visionnage
         films.forEach(film => {
             if (film.dateDeVisionnage) {
                 const viewingYear = new Date(film.dateDeVisionnage).getFullYear();
-                if (yearCounts.has(viewingYear)) {
+                if (viewingYear >= currentYear - 4) {
                     yearCounts.set(viewingYear, (yearCounts.get(viewingYear) || 0) + 1);
                 }
             }
         });
         
-        // Trouver le maximum pour calculer les hauteurs relatives
         const maxCount = Math.max(...Array.from(yearCounts.values()));
         
-        // Convertir en tableau trié par année décroissante
         this.stats.yearlyStats = Array.from(yearCounts.entries())
             .sort(([yearA], [yearB]) => yearB - yearA)
             .map(([year, count]) => ({
                 year,
                 count,
-                height: maxCount > 0 ? `${(count / maxCount * 100)}%` : '0%'
+                height: maxCount > 0 ? `${Math.max((count / maxCount * 100), 5)}%` : '5%'
             }));
     }
 
     private calculateGenreStats(films: Film[]) {
         const genreCounts = new Map<string, number>();
         
-        // Compter les films par genre
         films.forEach(film => {
             film.genres.forEach(genre => {
-                genreCounts.set(genre, (genreCounts.get(genre) || 0) + 1);
+                if (genre && genre.trim()) {
+                    genreCounts.set(genre, (genreCounts.get(genre) || 0) + 1);
+                }
             });
         });
         
-        // Calculer le total pour les pourcentages
-        const totalFilms = films.length;
+        const totalGenres = Array.from(genreCounts.values()).reduce((sum, count) => sum + count, 0);
         
-        // Convertir en tableau et trier par nombre décroissant
         this.stats.genreStats = Array.from(genreCounts.entries())
             .map(([name, count]) => ({
                 name,
                 count,
-                percentage: Math.round((count / totalFilms) * 100)
+                percentage: Math.round((count / totalGenres) * 100)
             }))
             .sort((a, b) => b.count - a.count);
     }
@@ -295,22 +309,19 @@ export class DashboardController {
     private calculatePlatformStats(films: Film[]) {
         const platformCounts = new Map<string, number>();
         
-        // Compter les films par plateforme
         films.forEach(film => {
-            if (film.plateforme) {
+            if (film.plateforme && film.plateforme.trim()) {
                 platformCounts.set(film.plateforme, (platformCounts.get(film.plateforme) || 0) + 1);
             }
         });
         
-        // Calculer le total pour les pourcentages
-        const totalFilms = films.length;
+        const totalPlatforms = Array.from(platformCounts.values()).reduce((sum, count) => sum + count, 0);
         
-        // Convertir en tableau et trier par nombre décroissant
         this.stats.platformStats = Array.from(platformCounts.entries())
             .map(([name, count]) => ({
                 name,
                 count,
-                percentage: Math.round((count / totalFilms) * 100)
+                percentage: Math.round((count / totalPlatforms) * 100)
             }))
             .sort((a, b) => b.count - a.count);
     }

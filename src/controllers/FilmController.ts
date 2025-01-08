@@ -174,34 +174,28 @@ export function modifierFilmUtilisateur(userId: number, film: Film): void {
 
 // Afficher les films dans le DOM
 export function afficherFilms(films?: Film[]): void {
-    // Si aucun films n'est passé en paramètre, utiliser les films de l'utilisateur courant
+    const container = document.querySelector('.movies-grid');
+    if (!container) return;
+
+    // Si des films sont fournis, les utiliser, sinon utiliser les films de l'utilisateur actuel
     const filmsToDisplay = films || (currentUserId ? userFilmsStorage[currentUserId] : defaultFilms);
 
     // Mettre à jour les films dans le FilterController
     if (filterController) {
         filterController.setFilms(filmsToDisplay);
-    } else {
-        // Si le FilterController n'est pas encore initialisé, l'initialiser
-        filterController = new FilterController();
-        filterController.setFilms(filmsToDisplay);
+        return; // Le FilterController s'occupera de l'affichage
     }
+
+    // Si pas de FilterController, affichage direct
+    container.innerHTML = '';
+
+    filmsToDisplay.forEach(film => {
+        const card = createFilmCard(film);
+        container.appendChild(card);
+    });
 
     // Mettre à jour le compteur de films
     updateMovieCount();
-
-    // Mettre à jour les badges
-    const userId = parseInt(localStorage.getItem('currentUserId') || '0');
-    if (userId) {
-        BadgeController.getInstance().checkAndUpdateBadges(userId, filmsToDisplay);
-    }
-
-    // Déclencher l'événement de mise à jour des films pour le dashboard
-    const event = new CustomEvent('filmsUpdated', { 
-        detail: { 
-            films: filmsToDisplay || [] 
-        } 
-    });
-    document.dispatchEvent(event);
 }
 
 // Fonction pour créer une carte de film
