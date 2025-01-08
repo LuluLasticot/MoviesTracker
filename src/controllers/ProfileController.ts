@@ -6,6 +6,15 @@ export class ProfileController {
     private currentUserData: any;
 
     constructor() {
+        // Récupérer l'utilisateur actuel du localStorage au démarrage
+        const storedUser = localStorage.getItem('currentUser');
+        if (storedUser) {
+            const user = JSON.parse(storedUser);
+            this.currentUserId = user.id;
+            this.currentUserData = user;
+            this.loadUserProfile();
+        }
+
         // Écouter les événements de connexion/déconnexion
         document.addEventListener('userLoggedIn', ((e: CustomEvent) => {
             this.currentUserId = e.detail.user.id;
@@ -32,6 +41,11 @@ export class ProfileController {
             e.preventDefault();
             this.updateProfile();
         });
+
+        // Mettre à jour les statistiques initiales si un utilisateur est connecté
+        if (this.currentUserId) {
+            this.updateStatistics();
+        }
     }
 
     private loadUserProfile() {
@@ -95,48 +109,74 @@ export class ProfileController {
         }
     }
 
-    private async updateStatistics() {
+    public async updateStatistics() {
         if (!this.currentUserId) return;
 
-        // Récupérer les films de l'utilisateur
-        const userFilmsStorage = JSON.parse(localStorage.getItem('userFilms') || '{}');
-        const userFilms: Film[] = userFilmsStorage[this.currentUserId] || [];
+        try {
+            const userFilmsStorage = localStorage.getItem(`films_${this.currentUserId}`);
+            if (!userFilmsStorage) return;
 
-        // 1. Temps total de visionnage
-        const totalMinutes = userFilms.reduce((acc, film) => acc + (film.duree || 0), 0);
-        const totalHours = Math.round(totalMinutes / 60);
-        document.getElementById('total-watch-time')!.textContent = `${totalHours} heures`;
+            const userFilms = JSON.parse(userFilmsStorage) as Film[];
 
-        // 2. Genre préféré
-        const genreCounts: { [key: string]: number } = {};
-        userFilms.forEach(film => {
-            film.genres.forEach(genre => {
-                genreCounts[genre] = (genreCounts[genre] || 0) + 1;
-            });
-        });
-        const favoriteGenre = Object.entries(genreCounts)
-            .sort(([,a], [,b]) => b - a)[0]?.[0] || '-';
-        document.getElementById('favorite-genre')!.textContent = favoriteGenre;
-
-        // 3. Réalisateur le plus regardé
-        const directorCounts: { [key: string]: number } = {};
-        userFilms.forEach(film => {
-            if (film.realisateur) {
-                directorCounts[film.realisateur] = (directorCounts[film.realisateur] || 0) + 1;
+            // 1. Temps total de visionnage
+            const totalMinutes = userFilms.reduce((acc: number, film: Film) => {
+                return acc + (film.duree || 0);
+            }, 0);
+            const totalHours = Math.floor(totalMinutes / 60);
+            const element = document.getElementById('total-watch-time');
+            if (element) {
+                element.textContent = `${totalHours} heures`;
             }
-        });
-        const favoriteDirector = Object.entries(directorCounts)
-            .sort(([,a], [,b]) => b - a)[0]?.[0] || '-';
-        document.getElementById('favorite-director')!.textContent = favoriteDirector;
 
-        // 4. Films vus cette année
-        const currentYear = new Date().getFullYear();
-        document.getElementById('current-year')!.textContent = currentYear.toString();
-        const moviesThisYear = userFilms.filter(film => {
-            const filmYear = new Date(film.dateDeVisionnage).getFullYear();
-            return filmYear === currentYear;
-        }).length;
-        document.getElementById('movies-this-year')!.textContent = `${moviesThisYear} films`;
+            // 2. Genre préféré
+            const genreCounts: { [key: string]: number } = {};
+            userFilms.forEach((film: Film) => {
+                if (Array.isArray(film.genres)) {
+                    film.genres.forEach((genre: string) => {
+                        genreCounts[genre] = (genreCounts[genre] || 0) + 1;
+                    });
+                }
+            });
+            const favoriteGenre = Object.entries(genreCounts)
+                .sort(([,a], [,b]) => b - a)[0]?.[0] || '-';
+            const genreElement = document.getElementById('favorite-genre');
+            if (genreElement) {
+                genreElement.textContent = favoriteGenre;
+            }
+
+            // 3. Réalisateur le plus regardé
+            const directorCounts: { [key: string]: number } = {};
+            userFilms.forEach((film: Film) => {
+                if (film.realisateur) {
+                    directorCounts[film.realisateur] = (directorCounts[film.realisateur] || 0) + 1;
+                }
+            });
+            const favoriteDirector = Object.entries(directorCounts)
+                .sort(([,a], [,b]) => b - a)[0]?.[0] || '-';
+            const directorElement = document.getElementById('favorite-director');
+            if (directorElement) {
+                directorElement.textContent = favoriteDirector;
+            }
+
+            // 4. Films vus cette année
+            const currentYear = new Date().getFullYear();
+            const yearElement = document.getElementById('current-year');
+            if (yearElement) {
+                yearElement.textContent = currentYear.toString();
+            }
+            
+            const moviesThisYear = userFilms.filter((film: Film) => {
+                const filmYear = new Date(film.dateDeVisionnage).getFullYear();
+                return filmYear === currentYear;
+            }).length;
+            const moviesElement = document.getElementById('movies-this-year');
+            if (moviesElement) {
+                moviesElement.textContent = `${moviesThisYear} films`;
+            }
+
+        } catch (error) {
+            console.error('Erreur lors de la mise à jour des statistiques:', error);
+        }
     }
 
     private resetProfile() {
@@ -152,6 +192,7 @@ export class ProfileController {
         document.getElementById('total-watch-time')!.textContent = '0 heures';
         document.getElementById('favorite-genre')!.textContent = '-';
         document.getElementById('favorite-director')!.textContent = '-';
+        document.getElementById('current-year')!.textContent = new Date().getFullYear().toString();
         document.getElementById('movies-this-year')!.textContent = '0 films';
     }
 

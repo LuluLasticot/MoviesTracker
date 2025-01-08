@@ -1,287 +1,132 @@
 import { Film } from "../models/Film";
 
-interface FilterState {
-    sort: string;
-    platform: string;
-    genre: string;
-    yearMin: number | null;
-    yearMax: number | null;
-}
-
 export class FilterController {
     private films: Film[] = [];
-    private filteredFilms: Film[] = [];
-    private filterState: FilterState = {
-        sort: 'date-desc',
-        platform: '',
-        genre: '',
-        yearMin: null,
-        yearMax: null
-    };
 
     constructor() {
-        this.initializeFilters();
+        this.initializeListeners();
     }
 
-    setFilms(films: Film[]) {
-        if (!films || !Array.isArray(films)) {
-            console.error('Films invalides passés à setFilms:', films);
-            return;
-        }
-
-        // Créer une copie profonde du tableau
-        this.films = JSON.parse(JSON.stringify(films));
+    public setFilms(films: Film[]) {
+        this.films = [...films];
         this.applyFilters();
     }
 
-    private initializeFilters() {
-        // Tri
-        const sortSelect = document.getElementById('sort-select') as HTMLSelectElement;
-        if (sortSelect) {
-            sortSelect.value = this.filterState.sort;
-            sortSelect.addEventListener('change', (e) => {
-                e.preventDefault();
-                this.filterState.sort = sortSelect.value;
-                this.applyFilters();
-            });
-        }
-
-        // Plateforme
-        const platformSelect = document.getElementById('platform-select') as HTMLSelectElement;
-        if (platformSelect) {
-            platformSelect.value = this.filterState.platform;
-            platformSelect.addEventListener('change', (e) => {
-                e.preventDefault();
-                this.filterState.platform = platformSelect.value;
-                this.applyFilters();
-            });
-        }
-
-        // Genre
-        const genreSelect = document.getElementById('genre-select') as HTMLSelectElement;
-        if (genreSelect) {
-            genreSelect.value = this.filterState.genre;
-            genreSelect.addEventListener('change', (e) => {
-                e.preventDefault();
-                this.filterState.genre = genreSelect.value;
-                this.applyFilters();
-            });
-        }
-
-        // Année min
-        const yearMinInput = document.getElementById('year-min') as HTMLInputElement;
-        if (yearMinInput) {
-            yearMinInput.value = this.filterState.yearMin?.toString() || '';
-            yearMinInput.addEventListener('change', (e) => {
-                e.preventDefault();
-                this.filterState.yearMin = yearMinInput.value ? parseInt(yearMinInput.value) : null;
-                this.applyFilters();
-            });
-        }
-
-        // Année max
-        const yearMaxInput = document.getElementById('year-max') as HTMLInputElement;
-        if (yearMaxInput) {
-            yearMaxInput.value = this.filterState.yearMax?.toString() || '';
-            yearMaxInput.addEventListener('change', (e) => {
-                e.preventDefault();
-                this.filterState.yearMax = yearMaxInput.value ? parseInt(yearMaxInput.value) : null;
-                this.applyFilters();
-            });
-        }
-
-        // Réinitialisation
-        const resetButton = document.getElementById('reset-filters');
-        if (resetButton) {
-            resetButton.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.resetFilters();
-            });
-        }
-    }
-
-    private resetFilters() {
-        // Réinitialiser l'état des filtres
-        this.filterState = {
-            sort: 'date-desc',
-            platform: '',
-            genre: '',
-            yearMin: null,
-            yearMax: null
-        };
-
-        // Réinitialiser les éléments du DOM
-        const elements = {
-            'sort-select': 'date-desc',
-            'platform-select': '',
-            'genre-select': '',
-            'year-min': '',
-            'year-max': ''
-        };
-
-        Object.entries(elements).forEach(([id, value]) => {
-            const element = document.getElementById(id) as HTMLSelectElement | HTMLInputElement;
+    private initializeListeners() {
+        const filterElements = ['sort-select', 'platform-select', 'genre-select'];
+        filterElements.forEach(id => {
+            const element = document.getElementById(id);
             if (element) {
-                element.value = value;
+                element.addEventListener('change', () => this.applyFilters());
             }
         });
-
-        // Réappliquer les filtres
-        this.applyFilters();
     }
 
     private applyFilters() {
-        if (!this.films || !Array.isArray(this.films)) {
-            console.error('Films invalides dans applyFilters');
-            return;
+        if (!this.films.length) return;
+
+        let filteredFilms = [...this.films];
+
+        // Récupérer les valeurs des filtres
+        const platformValue = (document.getElementById('platform-select') as HTMLSelectElement)?.value;
+        const genreValue = (document.getElementById('genre-select') as HTMLSelectElement)?.value;
+        const sortValue = (document.getElementById('sort-select') as HTMLSelectElement)?.value || 'date-desc';
+
+        // Appliquer les filtres
+        if (platformValue) {
+            filteredFilms = filteredFilms.filter(film => film.plateforme === platformValue);
         }
 
-        try {
-            // Créer une copie profonde du tableau original
-            this.filteredFilms = JSON.parse(JSON.stringify(this.films));
+        if (genreValue) {
+            filteredFilms = filteredFilms.filter(film => film.genres.includes(genreValue));
+        }
 
-            // Appliquer les filtres
-            this.filteredFilms = this.filteredFilms.filter(film => {
-                if (!film) return false;
-
-                // Filtre par plateforme
-                if (this.filterState.platform && film.plateforme !== this.filterState.platform) {
-                    return false;
-                }
-
-                // Filtre par genre
-                if (this.filterState.genre && !film.genres?.includes(this.filterState.genre)) {
-                    return false;
-                }
-
-                // Filtre par année
-                if (this.filterState.yearMin && film.annee < this.filterState.yearMin) {
-                    return false;
-                }
-                if (this.filterState.yearMax && film.annee > this.filterState.yearMax) {
-                    return false;
-                }
-
-                return true;
-            });
-
-            // Appliquer le tri
-            this.filteredFilms.sort((a, b) => {
-                try {
-                    switch (this.filterState.sort) {
-                        case 'date-desc':
-                            return new Date(b.dateDeVisionnage || '').getTime() - new Date(a.dateDeVisionnage || '').getTime();
-                        case 'date-asc':
-                            return new Date(a.dateDeVisionnage || '').getTime() - new Date(b.dateDeVisionnage || '').getTime();
-                        case 'title-asc':
-                            return (a.titre || '').localeCompare(b.titre || '');
-                        case 'title-desc':
-                            return (b.titre || '').localeCompare(a.titre || '');
-                        case 'rating-desc':
-                            return (b.note || 0) - (a.note || 0);
-                        case 'rating-asc':
-                            return (a.note || 0) - (b.note || 0);
-                        case 'year-desc':
-                            return (b.annee || 0) - (a.annee || 0);
-                        case 'year-asc':
-                            return (a.annee || 0) - (b.annee || 0);
-                        default:
-                            return 0;
-                    }
-                } catch (error) {
-                    console.error('Erreur lors du tri:', error);
+        // Appliquer le tri
+        filteredFilms.sort((a, b) => {
+            switch (sortValue) {
+                case 'date-desc':
+                    return new Date(b.dateDeVisionnage).getTime() - new Date(a.dateDeVisionnage).getTime();
+                case 'date-asc':
+                    return new Date(a.dateDeVisionnage).getTime() - new Date(b.dateDeVisionnage).getTime();
+                case 'title-asc':
+                    return a.titre.localeCompare(b.titre, 'fr', { sensitivity: 'base' });
+                case 'title-desc':
+                    return b.titre.localeCompare(a.titre, 'fr', { sensitivity: 'base' });
+                case 'rating-desc':
+                    return b.note - a.note;
+                case 'rating-asc':
+                    return a.note - b.note;
+                case 'year-desc':
+                    return b.annee - a.annee;
+                case 'year-asc':
+                    return a.annee - b.annee;
+                default:
                     return 0;
+            }
+        });
+
+        // Mettre à jour l'affichage
+        const container = document.querySelector('.movies-grid');
+        if (!container) return;
+
+        container.innerHTML = '';
+        filteredFilms.forEach(film => {
+            const card = document.createElement('div');
+            card.className = 'movie-card';
+            card.dataset.id = film.id.toString();
+            
+            card.innerHTML = `
+                <img src="${film.affiche}" alt="${film.titre}">
+                <div class="movie-info">
+                    <h3>${film.titre}</h3>
+                    <p>${film.annee}</p>
+                    <div class="rating">${film.note}/10</div>
+                </div>
+                <div class="card-buttons">
+                    <button class="delete-btn" data-id="${film.id}" title="Supprimer">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                    <button class="edit-btn" data-id="${film.id}" title="Modifier">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                </div>
+            `;
+
+            container.appendChild(card);
+        });
+
+        // Réattacher les event listeners
+        this.attachCardEventListeners();
+
+        // Déclencher l'événement de mise à jour
+        document.dispatchEvent(new CustomEvent('filmsUpdated', { 
+            detail: { films: filteredFilms }
+        }));
+    }
+
+    private attachCardEventListeners() {
+        // Gestionnaire pour les boutons de suppression
+        document.querySelectorAll('.delete-btn').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const filmId = (e.currentTarget as HTMLElement).dataset.id;
+                if (filmId) {
+                    document.dispatchEvent(new CustomEvent('filmDelete', {
+                        detail: { filmId: parseInt(filmId) }
+                    }));
                 }
             });
+        });
 
-            // Mettre à jour l'affichage
-            this.updateDisplay();
-        } catch (error) {
-            console.error('Erreur dans applyFilters:', error);
-        }
-    }
-
-    private updateDisplay() {
-        const container = document.querySelector('.movies-grid');
-        if (!container) {
-            console.error('Container .movies-grid non trouvé');
-            return;
-        }
-
-        try {
-            // Générer le nouveau HTML
-            const newHtml = this.filteredFilms.map((film) => {
-                if (!film) return '';
-                
-                return `
-                    <div class="movie-card" data-id="${film.id}">
-                        <img src="${film.affiche || ''}" alt="${film.titre || 'Film sans titre'}">
-                        <div class="movie-info">
-                            <h3>${film.titre || 'Sans titre'}</h3>
-                            <p>${film.annee || 'Année inconnue'}</p>
-                            <div class="rating">${film.note || 0}/10</div>
-                        </div>
-                        <div class="card-buttons">
-                            <button class="delete-btn" data-id="${film.id}" title="Supprimer">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                            <button class="edit-btn" data-id="${film.id}" title="Modifier">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            // Mettre à jour le DOM
-            container.innerHTML = newHtml;
-
-            // Réattacher les event listeners
-            this.reattachCardEventListeners();
-        } catch (error) {
-            console.error('Erreur dans updateDisplay:', error);
-        }
-    }
-
-    private reattachCardEventListeners() {
-        try {
-            // Boutons de suppression
-            document.querySelectorAll('.delete-btn').forEach(btn => {
-                btn.addEventListener('click', (event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    const button = event.currentTarget as HTMLButtonElement;
-                    const filmId = parseInt(button.getAttribute('data-id') || '0');
-                    if (filmId) {
-                        const deleteEvent = new CustomEvent('filmDelete', { 
-                            detail: { filmId },
-                            bubbles: true,
-                            cancelable: true 
-                        });
-                        document.dispatchEvent(deleteEvent);
-                    }
-                });
+        // Gestionnaire pour les boutons de modification
+        document.querySelectorAll('.edit-btn').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const filmId = (e.currentTarget as HTMLElement).dataset.id;
+                if (filmId) {
+                    document.dispatchEvent(new CustomEvent('filmEdit', {
+                        detail: { filmId: parseInt(filmId) }
+                    }));
+                }
             });
-
-            // Boutons de modification
-            document.querySelectorAll('.edit-btn').forEach(btn => {
-                btn.addEventListener('click', (event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    const button = event.currentTarget as HTMLButtonElement;
-                    const filmId = parseInt(button.getAttribute('data-id') || '0');
-                    if (filmId) {
-                        const editEvent = new CustomEvent('filmEdit', { 
-                            detail: { filmId },
-                            bubbles: true,
-                            cancelable: true 
-                        });
-                        document.dispatchEvent(editEvent);
-                    }
-                });
-            });
-        } catch (error) {
-            console.error('Erreur dans reattachCardEventListeners:', error);
-        }
+        });
     }
 }

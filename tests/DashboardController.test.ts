@@ -61,9 +61,10 @@ describe('DashboardController', () => {
         document.dispatchEvent(event);
 
         // Vérifier les statistiques de base
-        expect(dashboardController.stats.filmsCount).toBe(3);
-        expect(dashboardController.stats.totalTime.hours).toBe(7.6); // (148 + 152 + 154) / 60
-        expect(dashboardController.stats.averageRating).toBe(9); // (9 + 10 + 8) / 3
+        const stats = dashboardController.getStats();
+        expect(stats.filmsCount).toBe(3);
+        expect(stats.totalTime.hours).toBe(7.6); // (148 + 152 + 154) / 60
+        expect(stats.averageRating).toBe(9); // (9 + 10 + 8) / 3
     });
 
     test('should calculate top directors correctly', async () => {
@@ -74,8 +75,9 @@ describe('DashboardController', () => {
         document.dispatchEvent(event);
 
         // Vérifier les top réalisateurs
-        expect(dashboardController.stats.topDirectors[0].name).toBe("Christopher Nolan");
-        expect(dashboardController.stats.topDirectors[0].count).toBe(2);
+        const stats = dashboardController.getStats();
+        expect(stats.topDirectors[0].name).toBe("Christopher Nolan");
+        expect(stats.topDirectors[0].count).toBe(2);
     });
 
     test('should calculate genre stats correctly', () => {
@@ -86,7 +88,8 @@ describe('DashboardController', () => {
         document.dispatchEvent(event);
 
         // Vérifier les statistiques de genres
-        const dramaStats = dashboardController.stats.genreStats
+        const stats = dashboardController.getStats();
+        const dramaStats = stats.genreStats
             .find(genre => genre.name === "Drame");
         expect(dramaStats?.count).toBe(2);
         expect(dramaStats?.percentage).toBe(67); // 2/3 * 100
@@ -100,7 +103,8 @@ describe('DashboardController', () => {
         document.dispatchEvent(event);
 
         // Vérifier les statistiques de plateformes
-        const netflixStats = dashboardController.stats.platformStats
+        const stats = dashboardController.getStats();
+        const netflixStats = stats.platformStats
             .find(platform => platform.name === "Netflix");
         expect(netflixStats?.count).toBe(2);
         expect(netflixStats?.percentage).toBe(67); // 2/3 * 100
@@ -114,8 +118,9 @@ describe('DashboardController', () => {
         document.dispatchEvent(event);
 
         // Vérifier le top 5 des films
-        expect(dashboardController.stats.topRatedFilms[0].titre).toBe("The Dark Knight");
-        expect(dashboardController.stats.topRatedFilms[0].note).toBe(10);
+        const stats = dashboardController.getStats();
+        expect(stats.topRatedFilms[0].titre).toBe("The Dark Knight");
+        expect(stats.topRatedFilms[0].note).toBe(10);
     });
 
     test('should handle empty film list', () => {
@@ -126,9 +131,10 @@ describe('DashboardController', () => {
         document.dispatchEvent(event);
 
         // Vérifier que les statistiques sont à zéro
-        expect(dashboardController.stats.filmsCount).toBe(0);
-        expect(dashboardController.stats.totalTime.hours).toBe(0);
-        expect(dashboardController.stats.averageRating).toBe(0);
-        expect(dashboardController.stats.topRatedFilms).toHaveLength(0);
+        const stats = dashboardController.getStats();
+        expect(stats.filmsCount).toBe(0);
+        expect(stats.totalTime.hours).toBe(0);
+        expect(stats.averageRating).toBe(0);
+        expect(stats.topRatedFilms).toHaveLength(0);
     });
 });

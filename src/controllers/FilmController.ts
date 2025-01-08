@@ -117,14 +117,35 @@ function sauvegarderFilms(userId: number): void {
     }
 }
 
+// Vérifier si un film existe déjà pour un utilisateur
+function filmExisteDeja(userId: number, nouveauFilm: Film): boolean {
+    if (!userFilmsStorage[userId]) return false;
+    
+    return userFilmsStorage[userId].some(film => 
+        film.titre.toLowerCase() === nouveauFilm.titre.toLowerCase() &&
+        film.realisateur?.toLowerCase() === nouveauFilm.realisateur?.toLowerCase() &&
+        film.annee === nouveauFilm.annee
+    );
+}
+
 // Ajouter un film pour un utilisateur
-export function ajouterFilm(userId: number, film: Film): void {
+export function ajouterFilm(userId: number, film: Film): boolean {
     if (!userFilmsStorage[userId]) {
         userFilmsStorage[userId] = [];
     }
+
+    // Vérifier si le film existe déjà
+    if (filmExisteDeja(userId, film)) {
+        return false;
+    }
+
+    // Mettre à jour currentUserId
+    currentUserId = userId;
+
     userFilmsStorage[userId].push(film);
     sauvegarderFilms(userId);
     afficherFilms(userFilmsStorage[userId]);
+    return true;
 }
 
 // Supprimer un film pour un utilisateur
@@ -153,38 +174,28 @@ export function modifierFilmUtilisateur(userId: number, film: Film): void {
 
 // Afficher les films dans le DOM
 export function afficherFilms(films?: Film[]): void {
-    // Si aucun films n'est passé en paramètre, utiliser les films de l'utilisateur courant
+    const container = document.querySelector('.movies-grid');
+    if (!container) return;
+
+    // Si des films sont fournis, les utiliser, sinon utiliser les films de l'utilisateur actuel
     const filmsToDisplay = films || (currentUserId ? userFilmsStorage[currentUserId] : defaultFilms);
 
-    if (!filmsToDisplay) {
-        console.error('Aucun film à afficher');
-        return;
-    }
-
-    // S'assurer que filterController est initialisé
-    if (!filterController) {
-        filterController = new FilterController();
-    }
-
     // Mettre à jour les films dans le FilterController
-    filterController.setFilms(filmsToDisplay);
+    if (filterController) {
+        filterController.setFilms(filmsToDisplay);
+        return; // Le FilterController s'occupera de l'affichage
+    }
+
+    // Si pas de FilterController, affichage direct
+    container.innerHTML = '';
+
+    filmsToDisplay.forEach(film => {
+        const card = createFilmCard(film);
+        container.appendChild(card);
+    });
 
     // Mettre à jour le compteur de films
     updateMovieCount();
-
-    // Mettre à jour les badges
-    const userId = parseInt(localStorage.getItem('currentUserId') || '0');
-    if (userId) {
-        BadgeController.getInstance().checkAndUpdateBadges(userId, filmsToDisplay);
-    }
-
-    // Déclencher l'événement de mise à jour des films pour le dashboard
-    const event = new CustomEvent('filmsUpdated', { 
-        detail: { 
-            films: filmsToDisplay 
-        } 
-    });
-    document.dispatchEvent(event);
 }
 
 // Fonction pour créer une carte de film
