@@ -117,14 +117,35 @@ function sauvegarderFilms(userId: number): void {
     }
 }
 
+// Vérifier si un film existe déjà pour un utilisateur
+function filmExisteDeja(userId: number, nouveauFilm: Film): boolean {
+    if (!userFilmsStorage[userId]) return false;
+    
+    return userFilmsStorage[userId].some(film => 
+        film.titre.toLowerCase() === nouveauFilm.titre.toLowerCase() &&
+        film.realisateur?.toLowerCase() === nouveauFilm.realisateur?.toLowerCase() &&
+        film.annee === nouveauFilm.annee
+    );
+}
+
 // Ajouter un film pour un utilisateur
-export function ajouterFilm(userId: number, film: Film): void {
+export function ajouterFilm(userId: number, film: Film): boolean {
     if (!userFilmsStorage[userId]) {
         userFilmsStorage[userId] = [];
     }
+
+    // Vérifier si le film existe déjà
+    if (filmExisteDeja(userId, film)) {
+        return false;
+    }
+
+    // Mettre à jour currentUserId
+    currentUserId = userId;
+
     userFilmsStorage[userId].push(film);
     sauvegarderFilms(userId);
     afficherFilms(userFilmsStorage[userId]);
+    return true;
 }
 
 // Supprimer un film pour un utilisateur

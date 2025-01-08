@@ -34,7 +34,7 @@ interface DashboardStats {
 }
 
 export class DashboardController {
-    private stats: DashboardStats;
+    protected stats: DashboardStats;
 
     constructor() {
         // Initialiser les statistiques vides
@@ -437,5 +437,9 @@ export class DashboardController {
             },
             badges: []
         };
+    }
+
+    getStats(): DashboardStats {
+        return this.stats;
     }
 }

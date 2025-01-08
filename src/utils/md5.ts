@@ -142,9 +142,11 @@ export function md5(input: string): string {
     }
 
     function hex(x: number[]) {
-        for (let i = 0; i < x.length; i++)
-            x[i] = rhex(x[i]);
-        return x.join('');
+        const result = [];
+        for (let i = 0; i < x.length; i++) {
+            result[i] = rhex(x[i]);
+        }
+        return result.join('');
     }
 
     function add32(a: number, b: number) {

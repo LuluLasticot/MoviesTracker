@@ -402,125 +402,114 @@ function showSuggestions(movies: any[], inputEl: HTMLInputElement) {
    FONCTION : Ajouter un nouveau film dans la liste
    ========================================================= */
 export async function ajouterNouveauFilm(): Promise<void> {
-  // Récupération des éléments du DOM
-  const titreElement = document.getElementById("film-title") as HTMLInputElement;
-  const dureeElement = document.getElementById("duree") as HTMLInputElement;
-  const realisateurElement = document.getElementById("realisations") as HTMLInputElement;
-  const noteElement = document.getElementById("note") as HTMLSelectElement;
-  const dateElement = document.getElementById("dateVisionnage") as HTMLInputElement;
-  const plateformeElement = document.getElementById("plateforme") as HTMLSelectElement;
-  const anneeElement = document.getElementById("annee") as HTMLSelectElement;
-
-  // Récupération des valeurs avec trim() et vérification stricte
-  const titre = titreElement?.value?.trim();
-  const annee = anneeElement?.value;
-  const genresValue = genreChoices?.getValue();
-  const genres = Array.isArray(genresValue) 
-    ? genresValue.map(choice => choice.value)
-    : genresValue 
-      ? [genresValue.value] 
-      : [];
-  const duree = dureeElement?.value?.trim();
-  const realisateur = realisateurElement?.value?.trim();
-  const acteurs = (document.getElementById("distribution") as HTMLInputElement).value.split(",").map((a) => a.trim()).filter(a => a);
-  const synopsis = (document.getElementById("synopsis") as HTMLTextAreaElement).value.trim();
-  const note = noteElement?.value;
-  const dateDeVisionnage = dateElement?.value;
-  const plateforme = plateformeElement?.value;
-  const affiche = (document.getElementById("affiche") as HTMLInputElement).value.trim() || "https://via.placeholder.com/400x600?text=No+Poster";
-
-  // Validation des champs obligatoires
-  let champsObligatoires = [
-    { valeur: titre, nom: "Titre", element: titreElement },
-    { valeur: annee, nom: "Année", element: anneeElement },
-    { valeur: duree, nom: "Durée", element: dureeElement },
-    { valeur: realisateur, nom: "Réalisateur", element: realisateurElement },
-    { valeur: note, nom: "Note", element: noteElement },
-    { valeur: dateDeVisionnage, nom: "Date de visionnage", element: dateElement },
-    { valeur: plateforme, nom: "Plateforme", element: plateformeElement }
-  ];
-
-  // En mode édition, on ne vérifie que les champs modifiables
-  if (filmEnCoursDeModification !== null) {
-    champsObligatoires = champsObligatoires.filter(champ => 
-      champ.nom === "Note" || 
-      champ.nom === "Date de visionnage" || 
-      champ.nom === "Plateforme"
-    );
-  }
-
-  const champsManquants = champsObligatoires
-    .filter(champ => {
-      const manquant = !champ.valeur;
-      if (manquant) {
-        console.log(`Champ manquant - ${champ.nom}:`, {
-          valeur: champ.valeur,
-          elementId: champ.element?.id,
-          elementValue: champ.element?.value
-        });
-      }
-      return manquant;
-    })
-    .map(champ => champ.nom);
-
-  if (champsManquants.length > 0) {
-    alert(`Veuillez remplir les champs obligatoires suivants : ${champsManquants.join(", ")}`);
-    return;
-  }
-
-  if (!currentUserId) {
-    alert("Vous devez être connecté pour ajouter ou modifier un film.");
-    return;
-  }
-
-  // Si on est en mode modification
-  if (filmEnCoursDeModification !== null) {
-    // Mettre à jour uniquement les champs personnels
-    const filmIndex = films.findIndex(f => f.id === filmEnCoursDeModification);
-    if (filmIndex !== -1) {
-      films[filmIndex] = {
-        ...films[filmIndex],
-        note: parseFloat(note!),
-        dateDeVisionnage: dateDeVisionnage!,
-        plateforme: plateforme!
-      };
-
-      // Sauvegarder les modifications
-      modifierFilmUtilisateur(currentUserId, films[filmIndex]);
-
-      // Réinitialiser le mode modification
-      filmEnCoursDeModification = null;
-      
-      // Utiliser la fonction resetForm du FilmController
-      resetFormController();
+    if (!currentUserId) {
+        alert("Vous devez être connecté pour ajouter un film.");
+        return;
     }
-  } else {
-    // Mode ajout d'un nouveau film
-    const maxId = films.length > 0 
-      ? Math.max(...films.map(f => f.id)) 
-      : 0;
 
+    // Récupération des éléments du DOM
+    const titreElement = document.getElementById("film-title") as HTMLInputElement;
+    const dureeElement = document.getElementById("duree") as HTMLInputElement;
+    const realisateurElement = document.getElementById("realisations") as HTMLInputElement;
+    const noteElement = document.getElementById("note") as HTMLSelectElement;
+    const dateElement = document.getElementById("dateVisionnage") as HTMLInputElement;
+    const plateformeElement = document.getElementById("plateforme") as HTMLSelectElement;
+    const anneeElement = document.getElementById("annee") as HTMLSelectElement;
+
+    // Récupération des valeurs avec trim() et vérification stricte
+    const titre = titreElement?.value?.trim();
+    const annee = anneeElement?.value;
+    const genresValue = genreChoices?.getValue();
+    const genres = Array.isArray(genresValue) 
+        ? genresValue.map(choice => choice.value)
+        : genresValue 
+        ? [genresValue.value] 
+        : [];
+    const duree = dureeElement?.value?.trim();
+    const realisateur = realisateurElement?.value?.trim();
+    const acteurs = (document.getElementById("distribution") as HTMLInputElement).value.split(",").map((a) => a.trim()).filter(a => a);
+    const synopsis = (document.getElementById("synopsis") as HTMLTextAreaElement).value.trim();
+    const note = noteElement?.value;
+    const dateDeVisionnage = dateElement?.value;
+    const plateforme = plateformeElement?.value;
+    const affiche = (document.getElementById("affiche") as HTMLInputElement).value.trim() || "https://via.placeholder.com/400x600?text=No+Poster";
+
+    // Validation des champs obligatoires
+    let champsObligatoires = [
+        { valeur: titre, nom: "Titre", element: titreElement },
+        { valeur: annee, nom: "Année", element: anneeElement },
+        { valeur: duree, nom: "Durée", element: dureeElement },
+        { valeur: realisateur, nom: "Réalisateur", element: realisateurElement },
+        { valeur: note, nom: "Note", element: noteElement },
+        { valeur: dateDeVisionnage, nom: "Date de visionnage", element: dateElement },
+        { valeur: plateforme, nom: "Plateforme", element: plateformeElement }
+    ];
+
+    // Vérifier les champs obligatoires
+    for (const champ of champsObligatoires) {
+        if (!champ.valeur) {
+            alert(`Le champ "${champ.nom}" est obligatoire.`);
+            champ.element?.focus();
+            return;
+        }
+    }
+
+    // Créer l'objet film
     const nouveauFilm: Film = {
-      id: maxId + 1,
-      titre: titre!,
-      annee: parseInt(annee!),
-      genres,
-      duree: parseInt(duree!),
-      realisateur: realisateur!,
-      acteurs,
-      synopsis,
-      note: parseFloat(note!),
-      dateDeVisionnage: dateDeVisionnage!,
-      plateforme: plateforme!,
-      affiche
+        id: Date.now(),
+        titre: titre!,
+        annee: parseInt(annee!),
+        genres: genres,
+        duree: parseInt(duree!),
+        realisateur: realisateur!,
+        acteurs: acteurs,
+        synopsis: synopsis,
+        note: parseInt(note!),
+        dateDeVisionnage: dateDeVisionnage!,
+        plateforme: plateforme!,
+        affiche: affiche
     };
 
     // Ajouter le film
-    ajouterFilm(currentUserId, nouveauFilm);
-  }
+    const ajoutReussi = ajouterFilm(currentUserId, nouveauFilm);
+    if (!ajoutReussi) {
+        alert("Ce film existe déjà dans votre liste !");
+        return;
+    }
+    
+    // Réinitialiser le formulaire
+    const form = document.querySelector('.movie-form form') as HTMLFormElement;
+    if (form) {
+        form.reset();
+        
+        // Réinitialiser manuellement chaque champ
+        (document.getElementById("film-title") as HTMLInputElement).value = "";
+        (document.getElementById("duree") as HTMLInputElement).value = "120";
+        (document.getElementById("realisations") as HTMLInputElement).value = "";
+        (document.getElementById("distribution") as HTMLInputElement).value = "";
+        (document.getElementById("synopsis") as HTMLTextAreaElement).value = "";
+        (document.getElementById("note") as HTMLSelectElement).value = "5";
+        (document.getElementById("dateVisionnage") as HTMLInputElement).value = new Date().toISOString().split('T')[0];
+        (document.getElementById("plateforme") as HTMLSelectElement).value = "netflix";
+        (document.getElementById("annee") as HTMLSelectElement).value = "2024";
+        (document.getElementById("affiche") as HTMLInputElement).value = "";
+        
+        // Réinitialiser les genres
+        if (genreChoices) {
+            genreChoices.removeActiveItems();
+            genreChoices.enable();
+        }
+    }
 
-  // Réinitialiser le formulaire et rafraîchir l'affichage
-  await afficherFilms();
+    // Mettre à jour l'affichage
+    await afficherFilms();
+    updateMovieCount();
+
+    // Faire défiler vers la section des films
+    const moviesSection = document.querySelector('.movies-list');
+    if (moviesSection) {
+        moviesSection.scrollIntoView({ behavior: 'smooth' });
+    }
 }
 
 export function modifierFilm(filmId: number): void {
@@ -555,20 +544,16 @@ export function modifierFilm(filmId: number): void {
 function resetForm(): void {
   // Réinitialiser chaque champ individuellement
   (document.getElementById("film-title") as HTMLInputElement).value = "";
-  (document.getElementById("annee") as HTMLSelectElement).value = "2024";
-  if (genreChoices) {
-    genreChoices.removeActiveItems();
-    genreChoices.setChoiceByValue([]);
-  }
-  (document.getElementById("duree") as HTMLInputElement).value = "";
+  (document.getElementById("duree") as HTMLInputElement).value = "120";
   (document.getElementById("realisations") as HTMLInputElement).value = "";
   (document.getElementById("distribution") as HTMLInputElement).value = "";
   (document.getElementById("synopsis") as HTMLTextAreaElement).value = "";
   (document.getElementById("note") as HTMLSelectElement).value = "5";
-  (document.getElementById("dateVisionnage") as HTMLInputElement).value = new Date().toISOString().split("T")[0];
-  (document.getElementById("plateforme") as HTMLSelectElement).value = "Netflix";
+  (document.getElementById("dateVisionnage") as HTMLInputElement).value = new Date().toISOString().split('T')[0];
+  (document.getElementById("plateforme") as HTMLSelectElement).value = "netflix";
+  (document.getElementById("annee") as HTMLSelectElement).value = "2024";
   (document.getElementById("affiche") as HTMLInputElement).value = "";
-
+  
   // Réinitialiser le mode modification
   filmEnCoursDeModification = null;
   const addButton = document.getElementById('ajouter-film-btn') as HTMLButtonElement;
@@ -653,6 +638,10 @@ function handleNavigation(text: string) {
       break;
     case "Profile":
       document.getElementById('profile-section')?.classList.remove('hidden');
+      // Forcer la mise à jour des statistiques
+      if (currentUserId) {
+        profileController.updateStatistics();
+      }
       break;
   }
 }
@@ -662,10 +651,23 @@ const navLinks = document.querySelectorAll(".nav-links a");
 navLinks.forEach(link => {
   link.addEventListener('click', (e) => {
     e.preventDefault();
-    const text = (e.target as HTMLElement).textContent?.trim() || "";
+    const text = link.querySelector('span')?.textContent || '';
     handleNavigation(text);
     handleNavUnderline(link);
+    closeMenu(); // Fermer le menu mobile si ouvert
   });
+});
+
+// Gérer le clic sur le bouton "Accéder au dashboard"
+const dashboardBtn = document.querySelector('.dashboard-btn');
+dashboardBtn?.addEventListener('click', () => {
+  handleNavigation('Dashboard');
+  // Mettre à jour la sélection dans la navigation
+  const dashboardLink = document.querySelector('a[data-section="dashboard"]');
+  if (dashboardLink) {
+    document.querySelectorAll('.nav-links a').forEach(link => link.classList.remove('active'));
+    dashboardLink.classList.add('active');
+  }
 });
 
 function handleNavUnderline(link: Element): void {
