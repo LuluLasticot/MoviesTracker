@@ -1,30 +1,43 @@
 // src/app.ts
 
-import { chargerFilms, afficherFilms, ajouterFilm, supprimerFilmUtilisateur, modifierFilmUtilisateur, initializeFilters, resetForm as resetFormController } from "./controllers/FilmController";
+import { chargerFilms, afficherFilms, ajouterFilm, supprimerFilmUtilisateur, modifierFilmUtilisateur, initializeFilters } from "./controllers/FilmController";
 import { Film } from "./models/Film";
-import { searchMoviesOnTMDB, getMovieDetails } from "./api/tmdb";
+import { searchMoviesOnTMDB } from "./api/tmdb";
 import Choices from "choices.js";
 import "choices.js/public/assets/styles/choices.min.css";
-import { chargerUtilisateurs, connecterUtilisateur, inscrireUtilisateur, getUtilisateurs } from "./controllers/UtilisateurController";
+import { chargerUtilisateurs, getUtilisateurs } from "./controllers/UtilisateurController";
 import { DashboardController } from "./controllers/DashboardController";
 import { WatchlistController } from "./controllers/WatchlistController";
 import { ProfileController } from "./controllers/ProfileController";
+import { StateManager } from "./utils/StateManager";
+import { NavigationService } from "./services/NavigationService";
+import { AuthService } from "./services/AuthService";
+import { FormService } from "./services/FormService";
+import { AutocompleteService } from "./services/AutocompleteService";
+import { FilmFilterService } from "./services/FilmFilterService";
 
-// On va stocker nos films dans un tableau global (en mémoire)
-let films: Film[] = [];
-// Variable globale pour l'instance de Choices
+interface AppState {
+  films: Film[];
+  filmEnCoursDeModification: number | null;
+}
+
+const appState = new StateManager<AppState>({
+  films: [],
+  filmEnCoursDeModification: null,
+});
+
+// Services
+const navigationService = NavigationService.getInstance();
+const authService = AuthService.getInstance();
+const formService = FormService.getInstance();
+const autocompleteService = AutocompleteService.getInstance();
+const filmFilterService = FilmFilterService.getInstance();
+
+// Variables globales nécessaires
 let genreChoices: Choices | null = null;
-let filmEnCoursDeModification: number | null = null;
-// Variable globale pour stocker l'utilisateur connecté
-let currentUserId: number | undefined = undefined;
-
-// Pour le dashboard
 let dashboardController: DashboardController;
 let watchlistController: WatchlistController;
 let profileController: ProfileController;
-
-// Pour l'autocomplete
-let suggestionBox: HTMLUListElement | null = null;
 
 // Types pour Choices.js
 interface EventChoice {
@@ -35,45 +48,49 @@ interface EventChoice {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
-  
   try {
     await chargerUtilisateurs();
     
     // Initialiser les modals d'authentification
     initAuthModals();
     
-    // Vérifier si un utilisateur est déjà connecté (stocké dans localStorage)
-    const storedUserId = localStorage.getItem('currentUserId');
-    if (storedUserId) {
-      currentUserId = parseInt(storedUserId);
-      // Mettre à jour l'interface utilisateur
-      updateHeaderUI();
-      // Charger les films de l'utilisateur
-      films = await chargerFilms(currentUserId);
-      // Initialiser la watchlist avec l'ID de l'utilisateur
-      watchlistController = new WatchlistController(currentUserId);
-    } else {
-      // Charger les films par défaut
-      films = await chargerFilms();
-      // Initialiser la watchlist sans ID utilisateur
-      watchlistController = new WatchlistController();
-    }
+    // Vérifier l'état de l'authentification
+    await authService.checkAuthState();
+    
+    // Charger les films appropriés
+    const currentUserId = authService.getCurrentUserId();
+    const loadedFilms = await chargerFilms(currentUserId || undefined);
+    appState.setState({
+      ...appState.getState(),
+      films: loadedFilms
+    });
 
-    // Initialiser le contrôleur du dashboard après le chargement des films
+    // Initialiser les contrôleurs
     dashboardController = new DashboardController();
-    // Initialiser le contrôleur de profil
     profileController = new ProfileController();
+    if (currentUserId) {
+      watchlistController = new WatchlistController(currentUserId);
+    }
+    
     // Déclencher la mise à jour initiale des statistiques
-    document.dispatchEvent(new CustomEvent('filmsUpdated', { detail: { films } }));
+    document.dispatchEvent(new CustomEvent('filmsUpdated', { 
+      detail: { films: loadedFilms } 
+    }));
     
     // Initialiser les autres composants
     initFilmsStuff();
     await initAutocomplete();
     
-    // Afficher les films
-    afficherFilms(films);
+    // S'abonner aux changements de filtres
+    filmFilterService.subscribe((filterState) => {
+      const filteredFilms = filmFilterService.filterAndSortFilms(appState.getState().films);
+      afficherFilms(filteredFilms);
+    });
+
+    // Afficher les films et mettre à jour l'interface
+    const filteredFilms = filmFilterService.filterAndSortFilms(loadedFilms);
+    afficherFilms(filteredFilms);
     updateMovieCount();
-    updateHeaderUI();
 
     // Initialiser les filtres
     initializeFilters();
@@ -84,97 +101,71 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 function initAuthModals(): void {
-  // 1. Sélectionner les boutons "Login" & "Signup" du header
-  const loginBtn = document.querySelector(".login-btn") as HTMLButtonElement;
-  const signupBtn = document.querySelector(".signup-btn") as HTMLButtonElement;
-
-  // 2. Sélectionner les modals
   const loginModal = document.getElementById("login-modal") as HTMLDivElement;
   const signupModal = document.getElementById("signup-modal") as HTMLDivElement;
 
-  // 3. Ajouter les event listeners sur les boutons d'ouverture des modales
-  loginBtn?.addEventListener("click", () => {
-    loginModal.classList.remove("hidden");
-    signupModal.classList.add("hidden");
-  });
-
-  signupBtn?.addEventListener("click", () => {
-    signupModal.classList.remove("hidden");
-    loginModal.classList.add("hidden");
-  });
-
-  // 4. Gérer les boutons "Annuler"
-  const loginCancelBtn = document.getElementById("login-cancel");
-  loginCancelBtn?.addEventListener("click", () => {
-    loginModal.classList.add("hidden");
-  });
-
-  const signupCancelBtn = document.getElementById("signup-cancel");
-  signupCancelBtn?.addEventListener("click", () => {
-    signupModal.classList.add("hidden");
-  });
-
-  // 5. Gérer la connexion
-  const loginSubmitBtn = document.getElementById("login-submit");
-  loginSubmitBtn?.addEventListener("click", async (e) => {
+  // Gérer la connexion
+  const loginForm = document.getElementById("login-form");
+  loginForm?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const email = (document.getElementById("login-email") as HTMLInputElement).value;
     const password = (document.getElementById("login-password") as HTMLInputElement).value;
 
-    const utilisateur = await connecterUtilisateur(email, password);
-    if (utilisateur) {
-      currentUserId = utilisateur.id;
-      updateHeaderUI();
+    const success = await authService.login(email, password);
+    if (success) {
       loginModal.classList.add("hidden");
-      // Charger les films de l'utilisateur
-      await chargerFilms(currentUserId);
-      await afficherFilms();
-      // Réinitialiser la watchlist avec l'ID du nouvel utilisateur
+      const currentUserId = authService.getCurrentUserId();
       watchlistController = new WatchlistController(currentUserId);
     } else {
       alert("Email ou mot de passe incorrect");
     }
   });
 
-  // 6. Gérer l'inscription
-  const signupSubmitBtn = document.getElementById("signup-submit");
-  signupSubmitBtn?.addEventListener("click", (e) => {
+  // Gérer l'inscription
+  const signupForm = document.getElementById("signup-form");
+  signupForm?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const pseudo = (document.getElementById("signup-pseudo") as HTMLInputElement).value;
     const email = (document.getElementById("signup-email") as HTMLInputElement).value;
     const password = (document.getElementById("signup-password") as HTMLInputElement).value;
 
-    const newUser = inscrireUtilisateur(pseudo, email, password);
-    if (newUser) {
-      currentUserId = newUser.id;
-      updateHeaderUI();
+    const success = await authService.register(pseudo, email, password);
+    if (success) {
       signupModal.classList.add("hidden");
-      alert("Inscription réussie ! Vous êtes maintenant connecté.");
-      // Réinitialiser la watchlist avec l'ID du nouvel utilisateur
+      const currentUserId = authService.getCurrentUserId();
       watchlistController = new WatchlistController(currentUserId);
+      alert("Inscription réussie ! Vous êtes maintenant connecté.");
+    } else {
+      alert("Erreur lors de l'inscription");
     }
   });
 
-  // 7. Gérer la déconnexion
+  // Gérer la déconnexion
   const logoutBtn = document.getElementById("logout-btn");
   logoutBtn?.addEventListener("click", () => {
-    currentUserId = undefined;
-    updateHeaderUI();
-    afficherFilms([]);  // Vider la liste des films
-    // Réinitialiser la watchlist sans ID utilisateur
-    watchlistController = new WatchlistController();
+    authService.logout();
+    window.location.reload(); // Recharger la page pour réinitialiser l'état
+  });
+
+  // Gérer les boutons d'annulation
+  const cancelButtons = document.querySelectorAll(".modal-cancel");
+  cancelButtons.forEach(button => {
+    button.addEventListener("click", () => {
+      loginModal.classList.add("hidden");
+      signupModal.classList.add("hidden");
+    });
   });
 }
 
-/* ==================== FONCTION : updateHeaderUI ==================== */
 function updateHeaderUI(): void {
   const authButtons = document.querySelector(".auth-buttons") as HTMLDivElement;
   const avatarContainer = document.getElementById("avatar-container") as HTMLDivElement;
   const avatarPseudo = document.getElementById("avatar-pseudo") as HTMLSpanElement;
 
-  if (currentUserId) {
+  if (authService.getCurrentUserId()) {
     // L'utilisateur est connecté
-    const user = getUtilisateurs().find(u => u.id === currentUserId);
+    const users = getUtilisateurs();
+    const user = users.find(u => u.id === authService.getCurrentUserId());
     if (user) {
       // Cacher les boutons d'auth et montrer le container avatar
       authButtons.style.display = "none";
@@ -182,14 +173,12 @@ function updateHeaderUI(): void {
       avatarPseudo.textContent = user.pseudo;
     }
   } else {
-    // L'utilisateur est déconnecté
+    // L'utilisateur n'est pas connecté
     authButtons.style.display = "flex";
     avatarContainer.style.display = "none";
-    avatarPseudo.textContent = "";
   }
 }
 
-/* ==================== Reste du code (films, etc.) ==================== */
 function initFilmsStuff(): void {
   // Initialiser Choices.js une seule fois
   const genreSelect = document.getElementById("genres") as HTMLSelectElement;
@@ -208,6 +197,7 @@ function initFilmsStuff(): void {
       placeholder: true,
       placeholderValue: "Sélectionnez un ou plusieurs genres",
     });
+    formService.setGenreChoices(genreChoices);
   }
 
   // Gérer le bouton "Ajouter un film"
@@ -223,190 +213,20 @@ function initFilmsStuff(): void {
   const sortSelect = document.querySelector(".sort-select") as HTMLSelectElement;
   if (sortSelect) {
     sortSelect.addEventListener("change", () => {
-      trierFilms(sortSelect.value);
+      // Supprimé la fonction trierFilms
     });
-  }
-
-  // Initialiser l'autocomplete
-  initAutocomplete();
-}
-
-function clearSuggestions(): void {
-  if (suggestionBox) {
-    suggestionBox.innerHTML = '';
-    suggestionBox.style.display = 'none';  // Cacher la boîte de suggestions
   }
 }
 
 async function initAutocomplete(): Promise<void> {
-  const inputEl = document.getElementById("film-title") as HTMLInputElement;
-  
-  if (!inputEl) return;
-
-  // Créer la boîte de suggestions si elle n'existe pas
-  if (!suggestionBox) {
-    suggestionBox = document.createElement('ul');
-    suggestionBox.className = 'autocomplete-list';
-    const formGroup = inputEl.closest('.form-group') as HTMLElement;
-    if (formGroup) {
-      formGroup.style.position = 'relative';
-      formGroup.appendChild(suggestionBox);
-    }
+  const searchInput = document.getElementById('search-tmdb') as HTMLInputElement;
+  if (searchInput) {
+    await autocompleteService.initialize(searchInput);
   }
-
-  let debounceTimeout: NodeJS.Timeout;
-
-  inputEl.addEventListener("input", async () => {
-    clearTimeout(debounceTimeout);
-    const searchTerm = inputEl.value.trim();
-
-    if (searchTerm.length < 2) {
-      clearSuggestions();
-      return;
-    }
-
-    debounceTimeout = setTimeout(async () => {
-      try {
-        const movies = await searchMoviesOnTMDB(searchTerm);
-        
-        if (!movies || movies.length === 0) {
-          clearSuggestions();
-          return;
-        }
-
-        // Afficher les suggestions
-        suggestionBox!.innerHTML = '';
-        suggestionBox!.style.display = 'block';
-
-        movies.forEach(movie => {
-          const li = document.createElement('li');
-          li.tabIndex = 0;
-          const year = movie.release_date ? ` (${movie.release_date.split('-')[0]})` : '';
-          li.textContent = `${movie.title}${year}`;
-          
-          li.addEventListener('click', async () => {
-            inputEl.value = movie.title;
-            await fillFormWithTMDB(movie.id);
-            clearSuggestions();
-          });
-
-          li.addEventListener('keydown', async (event) => {
-            if (event.key === 'Enter') {
-              inputEl.value = movie.title;
-              await fillFormWithTMDB(movie.id);
-              clearSuggestions();
-            }
-          });
-          
-          suggestionBox!.appendChild(li);
-        });
-      } catch (error) {
-        console.error('Erreur lors de la recherche de films:', error);
-        clearSuggestions();
-      }
-    }, 300);
-  });
-
-  // Fermer les suggestions si on clique en dehors
-  document.addEventListener('click', (event) => {
-    const target = event.target as HTMLElement;
-    if (target !== inputEl && !suggestionBox?.contains(target)) {
-      clearSuggestions();
-    }
-  });
-
-  // Gérer la navigation au clavier
-  inputEl.addEventListener('keydown', (event) => {
-    if (!suggestionBox || suggestionBox.style.display === 'none') return;
-
-    const suggestions = Array.from(suggestionBox.querySelectorAll('li'));
-    const currentFocus = document.activeElement;
-    const currentIndex = suggestions.findIndex(el => el === currentFocus);
-
-    switch (event.key) {
-      case 'ArrowDown':
-        event.preventDefault();
-        if (currentIndex < suggestions.length - 1) {
-          (suggestions[currentIndex + 1] as HTMLElement).focus();
-        } else {
-          (suggestions[0] as HTMLElement).focus();
-        }
-        break;
-
-      case 'ArrowUp':
-        event.preventDefault();
-        if (currentIndex > 0) {
-          (suggestions[currentIndex - 1] as HTMLElement).focus();
-        } else {
-          (suggestions[suggestions.length - 1] as HTMLElement).focus();
-        }
-        break;
-
-      case 'Escape':
-        clearSuggestions();
-        inputEl.blur();
-        break;
-    }
-  });
 }
 
-/* =========================================================
-   AUTO-COMPLETION TMDB
-   ========================================================= */
-
-function trierFilms(critere: string) {
-    if (critere === "Note") {
-      // tri décroissant par note
-      films.sort((a, b) => b.note - a.note);
-    } else if (critere === "Titre") {
-      // tri alphabétique
-      films.sort((a, b) => a.titre.localeCompare(b.titre));
-    } else if (critere === "Année") {
-      // tri décroissant par année
-      films.sort((a, b) => b.annee - a.annee);
-    }
-  
-    afficherFilms(films);
-  }
-
-// Affiche la liste de suggestions (top 5)
-function showSuggestions(movies: any[], inputEl: HTMLInputElement) {
-  clearSuggestions();
-  if (!suggestionBox) return;
-
-  const top5 = movies.slice(0, 5);
-  top5.forEach((movie: any) => {
-    const li = document.createElement("li");
-    const year = movie.release_date ? movie.release_date.substring(0, 4) : "????";
-    li.textContent = `${movie.title} (${year})`;
-
-    li.addEventListener("click", async () => {
-      // On remplit le champ titre
-      inputEl.value = movie.title;
-      // On préremplit l'affiche (hidden input)
-      await fillFormWithTMDB(movie.id);
-      // On efface la liste de suggestions
-      clearSuggestions();
-    });
-
-    // Ajouter un gestionnaire pour la touche Entrée
-    li.addEventListener('keydown', async (event) => {
-      if (event.key === 'Enter') {
-        inputEl.value = movie.title;
-        await fillFormWithTMDB(movie.id);
-        clearSuggestions();
-      }
-    });
-    
-    suggestionBox!.appendChild(li);
-  });
-}
-
-/* =========================================================
-   FONCTION : Ajouter un nouveau film dans la liste
-   ========================================================= */
 export async function ajouterNouveauFilm(): Promise<void> {
-    if (!currentUserId) {
+    if (!authService.getCurrentUserId()) {
         alert("Vous devez être connecté pour ajouter un film.");
         return;
     }
@@ -475,7 +295,7 @@ export async function ajouterNouveauFilm(): Promise<void> {
     };
 
     // Ajouter le film
-    const ajoutReussi = ajouterFilm(currentUserId, nouveauFilm);
+    const ajoutReussi = ajouterFilm(authService.getCurrentUserId(), nouveauFilm);
     if (!ajoutReussi) {
         alert("Ce film existe déjà dans votre liste !");
         return;
@@ -517,14 +337,17 @@ export async function ajouterNouveauFilm(): Promise<void> {
 }
 
 export function modifierFilm(filmId: number): void {
-  if (!currentUserId) return;
+  if (!authService.getCurrentUserId()) return;
 
   // Récupérer le film à modifier
-  const film = films.find(f => f.id === filmId);
+  const film = appState.getState().films.find(f => f.id === filmId);
   if (!film) return;
 
   // Sauvegarder l'ID du film en cours de modification
-  filmEnCoursDeModification = filmId;
+  appState.setState({
+    ...appState.getState(),
+    filmEnCoursDeModification: filmId
+  });
 
   // Remplir le formulaire avec les données du film
   const form = document.querySelector('.movie-form') as HTMLElement;
@@ -559,18 +382,18 @@ function resetForm(): void {
   (document.getElementById("affiche") as HTMLInputElement).value = "";
   
   // Réinitialiser le mode modification
-  filmEnCoursDeModification = null;
+  appState.setState({
+    ...appState.getState(),
+    filmEnCoursDeModification: null
+  });
   const addButton = document.getElementById('ajouter-film-btn') as HTMLButtonElement;
   if (addButton) {
     addButton.textContent = 'Ajouter le film';
   }
 }
 
-/* =========================================================
-   FONCTION : Supprimer un film
-   ========================================================= */
 export function supprimerFilm(id: number): void {
-  if (!currentUserId) {
+  if (!authService.getCurrentUserId()) {
     alert("Vous devez être connecté pour supprimer un film.");
     return;
   }
@@ -581,219 +404,40 @@ export function supprimerFilm(id: number): void {
   }
 
   // Supprimer le film via le contrôleur
-  supprimerFilmUtilisateur(currentUserId, id);
+  supprimerFilmUtilisateur(authService.getCurrentUserId(), id);
   
   // Rafraîchir l'affichage
-  chargerFilms(currentUserId).then(filmsActualises => {
+  chargerFilms(authService.getCurrentUserId()).then(filmsActualises => {
     afficherFilms(filmsActualises);
     updateMovieCount();
   });
 }
 
-/* =========================================================
-   FONCTION : Mise à jour du compteur
-   ========================================================= */
 export function updateMovieCount(): void {
   const movieCountElement = document.querySelector(".movie-count span");
   if (!movieCountElement) return;
 
-  if (currentUserId) {
+  if (authService.getCurrentUserId()) {
     // Si un utilisateur est connecté, obtenir le nombre de ses films depuis le localStorage
-    const userFilms = localStorage.getItem(`films_${currentUserId}`);
+    const userFilms = localStorage.getItem(`films_${authService.getCurrentUserId()}`);
     const count = userFilms ? JSON.parse(userFilms).length : 0;
     movieCountElement.textContent = String(count).padStart(2, "0");
   } else {
     // Si aucun utilisateur n'est connecté, utiliser le nombre de films par défaut
-    movieCountElement.textContent = String(films.length).padStart(2, "0");
+    movieCountElement.textContent = String(appState.getState().films.length).padStart(2, "0");
   }
 }
 
-// Gérer la navigation
-function handleNavigation(text: string) {
-  // Cacher toutes les sections d'abord
-  const sections = [
-    '.hero',
-    '.movie-form',
-    '.movies-list',
-    '.dashboard-section',
-    '#profile-section',
-    '.watchlist-section'
-  ];
-  
-  sections.forEach(section => {
-    const element = section.startsWith('#') 
-      ? document.getElementById(section.slice(1))
-      : document.querySelector(section);
-    element?.classList.add('hidden');
-  });
-
-  // Afficher la section appropriée
-  switch (text) {
-    case "Home":
-      document.querySelector('.hero')?.classList.remove('hidden');
-      document.querySelector('.movie-form')?.classList.remove('hidden');
-      document.querySelector('.movies-list')?.classList.remove('hidden');
-      break;
-    case "Dashboard":
-      document.querySelector('.dashboard-section')?.classList.remove('hidden');
-      break;
-    case "Watchlist":
-      document.querySelector('.watchlist-section')?.classList.remove('hidden');
-      break;
-    case "Profile":
-      document.getElementById('profile-section')?.classList.remove('hidden');
-      // Forcer la mise à jour des statistiques
-      if (currentUserId) {
-        profileController.updateStatistics();
-      }
-      break;
-  }
-}
-
-// Gérer les clics sur les liens de navigation
-const navLinks = document.querySelectorAll(".nav-links a");
-navLinks.forEach(link => {
+document.querySelectorAll(".nav-links a").forEach(link => {
   link.addEventListener('click', (e) => {
     e.preventDefault();
-    const text = link.querySelector('span')?.textContent || '';
-    handleNavigation(text);
-    handleNavUnderline(link);
-    closeMenu(); // Fermer le menu mobile si ouvert
+    const route = link.getAttribute('data-route');
+    if (route) {
+      navigationService.navigate(route as any);
+    }
   });
 });
 
-// Gérer le clic sur le bouton "Accéder au dashboard"
-const dashboardBtn = document.querySelector('.dashboard-btn');
-dashboardBtn?.addEventListener('click', () => {
-  handleNavigation('Dashboard');
-  // Mettre à jour la sélection dans la navigation
-  const dashboardLink = document.querySelector('a[data-section="dashboard"]');
-  if (dashboardLink) {
-    document.querySelectorAll('.nav-links a').forEach(link => link.classList.remove('active'));
-    dashboardLink.classList.add('active');
-  }
-});
-
-function handleNavUnderline(link: Element): void {
-  if (!(link instanceof HTMLAnchorElement)) return;
-  
-  const navLinks = document.querySelectorAll(".nav-links a");
-  navLinks.forEach((link) => link.classList.remove("active"));
-  link.classList.add("active");
+async function handleTMDBSelection(movieId: number): Promise<void> {
+  await formService.fillFormWithTMDB(movieId);
 }
-
-/**
- * Remplit certains champs (affiche, année...) avec les infos du film TMDB
- */
-async function fillFormWithTMDB(movieId: number): Promise<void> {
-  const movieDetails = await getMovieDetails(movieId);
-  if (!movieDetails) return;
-
-  // Remplir les champs du formulaire avec les données TMDB
-  (document.getElementById("film-title") as HTMLInputElement).value = movieDetails.title;
-  (document.getElementById("annee") as HTMLSelectElement).value = new Date(movieDetails.release_date).getFullYear().toString();
-  (document.getElementById("duree") as HTMLInputElement).value = movieDetails.runtime?.toString() || "";
-  (document.getElementById("realisations") as HTMLInputElement).value = movieDetails.credits?.crew
-    .filter(member => member.job === "Director")
-    .map(director => director.name)
-    .join(", ") || "";
-  (document.getElementById("distribution") as HTMLInputElement).value = movieDetails.credits?.cast
-    .slice(0, 5)
-    .map(actor => actor.name)
-    .join(", ") || "";
-  (document.getElementById("synopsis") as HTMLTextAreaElement).value = movieDetails.overview || "";
-  (document.getElementById("affiche") as HTMLInputElement).value = movieDetails.poster_path
-    ? `https://image.tmdb.org/t/p/w500${movieDetails.poster_path}`
-    : "";
-
-  // Gestion des genres
-  if (genreChoices && movieDetails.genres) {
-    const genreSelect = document.getElementById("genres") as HTMLSelectElement;
-    const availableGenres = Array.from(genreSelect.options).map(opt => opt.value);
-    
-    // Mapper les genres TMDB vers nos genres locaux
-    const genreMapping: { [key: string]: string } = {
-      "Action": "Action",
-      "Adventure": "Aventure",
-      "Animation": "Animation",
-      "Comedy": "Comédie",
-      "Crime": "Policier",
-      "Documentary": "Documentaire",
-      "Drama": "Drame",
-      "Family": "Famille",
-      "Fantasy": "Fantastique",
-      "History": "Historique",
-      "Horror": "Horreur",
-      "Music": "Comédie Musicale",
-      "Mystery": "Mystère",
-      "Romance": "Romance",
-      "Science Fiction": "Science-fiction",
-      "Thriller": "Thriller",
-      "War": "Guerre",
-      "Western": "Western"
-    };
-
-    // Sélectionner les genres correspondants
-    const matchedGenres = movieDetails.genres
-      .map(g => genreMapping[g.name])
-      .filter(g => g && availableGenres.includes(g));
-
-    genreChoices.removeActiveItems();
-    genreChoices.setChoiceByValue(matchedGenres);
-  }
-}
-
-// Gestion du menu burger
-const burgerMenu = document.getElementById('burger-menu');
-const mobileMenu = document.getElementById('mobile-menu');
-let isMenuOpen = false;
-
-// Créer l'overlay pour le menu mobile
-const overlay = document.createElement('div');
-overlay.className = 'mobile-menu-overlay';
-document.body.appendChild(overlay);
-
-burgerMenu?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    isMenuOpen = !isMenuOpen;
-    if (isMenuOpen) {
-        mobileMenu?.classList.remove('hidden');
-        mobileMenu?.classList.add('show');
-        overlay.classList.add('show');
-        document.body.style.overflow = 'hidden';
-    } else {
-        closeMenu();
-    }
-});
-
-// Fonction pour fermer le menu
-function closeMenu() {
-    isMenuOpen = false;
-    mobileMenu?.classList.remove('show');
-    mobileMenu?.classList.add('hidden');
-    overlay.classList.remove('show');
-    document.body.style.overflow = '';
-}
-
-// Mettre à jour les event listeners
-overlay.addEventListener('click', closeMenu);
-
-const mobileLinks = mobileMenu?.querySelectorAll('.nav-links a');
-mobileLinks?.forEach(link => {
-    link.addEventListener('click', closeMenu);
-});
-
-// Fermer le menu si on clique en dehors
-document.addEventListener('click', (event) => {
-    const target = event.target as HTMLElement;
-    if (isMenuOpen && 
-        !mobileMenu?.contains(target) && 
-        !burgerMenu?.contains(target)) {
-        isMenuOpen = false;
-        mobileMenu?.classList.remove('show');
-        mobileMenu?.classList.add('hidden');
-    }
-});
-
-// app.ts ou un code JS
-// ... (reste du code inchangé)
